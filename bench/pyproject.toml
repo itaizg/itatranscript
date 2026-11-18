@@ -1,0 +1,46 @@
+[project]
+name = "itabench"
+version = "0.1.0"
+description = "Benchmark harness for live Hebrew/English caption engines"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "pydantic>=2",
+    "jiwer",
+    "numpy",
+    "soundfile",
+    "websockets",
+    "typer",
+    "pyyaml",
+    "onnxruntime",
+]
+
+[project.optional-dependencies]
+cleanup = ["pyrnnoise", "deepfilternet"]
+local = ["faster-whisper"]
+google = ["google-cloud-speech"]
+azure = ["azure-cognitiveservices-speech"]
+
+[project.scripts]
+itabench = "itabench.cli:app"
+
+[dependency-groups]
+dev = ["pytest", "pytest-asyncio", "jsonschema", "ruff", "ty"]
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "UP", "SIM", "C4", "PTH", "RET", "PIE", "PERF", "E722", "BLE", "TRY", "ANN", "D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.ty]

@@ -27,8 +27,8 @@
 
 **Purpose**: repo hygiene, quality gates, the `shared/` definitions, and vendor facts.
 
-- [ ] T001 Fix `.gitignore`: change the bare `lib/` rule to `/lib/`, and add `bench/data/`, `bench/results/`, `.env`, `bench/.env`. **Verify:** `git check-ignore app/lib/main.dart` prints nothing, and `git check-ignore bench/data/x.wav bench/results/x bench/.env` prints all three
-- [ ] T002 Create the harness project with `uv init --package --name itabench bench`. In `bench/pyproject.toml`:
+- [X] T001 Fix `.gitignore`: change the bare `lib/` rule to `/lib/`, and add `bench/data/`, `bench/results/`, `.env`, `bench/.env`. **Verify:** `git check-ignore app/lib/main.dart` prints nothing, and `git check-ignore bench/data/x.wav bench/results/x bench/.env` prints all three
+- [X] T002 Create the harness project with `uv init --package --name itabench bench`. In `bench/pyproject.toml`:
   - Python `>=3.13,<3.14`
   - deps `pydantic>=2 jiwer numpy soundfile websockets typer pyyaml onnxruntime`
   - optional groups `cleanup = [pyrnnoise, deepfilternet]`, `local = [faster-whisper]`, and one group per cloud SDK
@@ -39,28 +39,28 @@
   - commit `bench/uv.lock`
 
   **Verify:** `cd bench && uv sync --locked && uv run ruff check && uv run ty check` pass
-- [ ] T003 [P] Create `shared/engines.yaml` with a `fake` profile and placeholder profiles `apple-ondevice`, `android-ondevice`, `agora-rtstt`, `google-stt-he`, `azure-speech-he`, `soniox-rt`, `speechmatics-rt` and `whisper-ivrit-local`, exactly per `contracts/engine-profiles.md`. **Verify:** each entry has every field in the contract
-- [ ] T004 [P] Create `shared/pipeline.yaml` with the values in `contracts/pipeline-config.md`, and `shared/README.md` explaining that both `bench/` and `app/` load these files and must not copy their values. **Verify:** `uv run --project bench python -c "import yaml,sys; yaml.safe_load(open('shared/pipeline.yaml'))"` exits 0
-- [ ] T005 [P] Write `shared/engine-events.schema.json` (JSON Schema draft 2020-12): a `oneOf` over the seven event types in `contracts/engine-stream.md`, with `additionalProperties: false` on each. **Verify:** `uvx check-jsonschema --check-metaschema shared/engine-events.schema.json` passes
-- [ ] T006 [P] Add the pinned Silero VAD ONNX model as `shared/models/silero_vad.onnx` (from the official `snakers4/silero-vad` release tag) and record its sha256 in `shared/pipeline.yaml` `vad.model_sha256`. **Verify:** `shasum -a 256 shared/models/silero_vad.onnx` matches the YAML
-- [ ] T007 [P] Create the shared fixtures in `shared/fixtures/`:
+- [X] T003 [P] Create `shared/engines.yaml` with a `fake` profile and placeholder profiles `apple-ondevice`, `android-ondevice`, `agora-rtstt`, `google-stt-he`, `azure-speech-he`, `soniox-rt`, `speechmatics-rt` and `whisper-ivrit-local`, exactly per `contracts/engine-profiles.md`. **Verify:** each entry has every field in the contract
+- [X] T004 [P] Create `shared/pipeline.yaml` with the values in `contracts/pipeline-config.md`, and `shared/README.md` explaining that both `bench/` and `app/` load these files and must not copy their values. **Verify:** `uv run --project bench python -c "import yaml,sys; yaml.safe_load(open('shared/pipeline.yaml'))"` exits 0
+- [X] T005 [P] Write `shared/engine-events.schema.json` (JSON Schema draft 2020-12): a `oneOf` over the seven event types in `contracts/engine-stream.md`, with `additionalProperties: false` on each. **Verify:** `uvx check-jsonschema --check-metaschema shared/engine-events.schema.json` passes
+- [X] T006 [P] Add the pinned Silero VAD ONNX model as `shared/models/silero_vad.onnx` (from the official `snakers4/silero-vad` release tag) and record its sha256 in `shared/pipeline.yaml` `vad.model_sha256`. **Verify:** `shasum -a 256 shared/models/silero_vad.onnx` matches the YAML
+- [X] T007 [P] Create the shared fixtures in `shared/fixtures/`:
   - event logs: `partial-then-final.events.jsonl`, `speaker-change.events.jsonl`, `health-lost.events.jsonl`, `cancel-midstream.events.jsonl`
   - latency fixture: `latency-basic.events.jsonl` + `latency-basic.spans.json` + `latency-basic.expected.json` (hand-computed p50/p90 for both definitions)
   - audio: `silence-5s.wav` (16 kHz mono digital silence) and `speech-short.wav` (16 kHz mono, generated with macOS `say` then converted with `afconvert`)
 
   **Verify:** all nine files listed above exist, and both WAVs are 16 kHz mono (`afinfo`). Schema validity of every `.jsonl` line is checked by T014(a), which must pass before Phase 2's checkpoint
-- [ ] T008 [P] Create `.pre-commit-config.yaml` with pinned revisions:
+- [X] T008 [P] Create `.pre-commit-config.yaml` with pinned revisions:
   - `ruff` (check + format) and a local `ty` hook (`uv run --project bench ty check`)
   - local `dart format --set-exit-if-changed` and `dart analyze` hooks, limited to `^app/`
 
   **Verify:** `uvx pre-commit install` succeeds (the hooks run on the next `git commit`), and `uvx pre-commit run --all-files` passes
-- [ ] T009 [P] Create `.github/workflows/ci.yml`:
+- [X] T009 [P] Create `.github/workflows/ci.yml`:
   - triggers on `pull_request` and `push` to `main`
   - `permissions: contents: read`; actions pinned to commit SHAs; no secrets
   - jobs: (1) pre-commit on all files; (2) `uv sync --locked` + `uv run pytest` in `bench/`; (3) `flutter test` in `app/`; (4) `swift test` in `bench/tools/apple-speech/` on a pinned `macos` runner; (5) `xcodebuild test` of `app/ios` `RunnerTests` on an iOS simulator (macOS runner), after setup steps `flutter build ios --config-only` and `pod install`; (6) `./gradlew test` in `bench/tools/android-speech/` (Linux, pinned JDK). Each job is skipped while its directory doesn't exist yet
 
   **Verify:** the workflow passes on the branch's PR
-- [ ] T010 [P] Create `bench/.env.example`, listing one env var name per cloud profile for **harness-only** keys (no values), with a header saying the app uses separate keys (XIV). **Verify:** `grep -E '=.+' bench/.env.example` finds nothing
+- [X] T010 [P] Create `bench/.env.example`, listing one env var name per cloud profile for **harness-only** keys (no values), with a header saying the app uses separate keys (XIV). **Verify:** `grep -E '=.+' bench/.env.example` finds nothing
 - [ ] T011 Do research task R-2a. For Agora, Google, Azure, Soniox and Speechmatics, read the current vendor docs and write `specs/001-live-captions/vendor-check.md`, a table with source links and access dates covering: streaming Hebrew, mixed-language support, live speaker labels, price per hour, audio retention/training terms, and opt-out. Then:
   - fill `cost_usd_per_hour` and `privacy.*` in `shared/engines.yaml`
   - pick one of Soniox/Speechmatics and delete the other profile

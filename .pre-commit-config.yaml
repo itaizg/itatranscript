@@ -1,0 +1,26 @@
+exclude: ^\.specify/
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.5
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty check
+        entry: uv run --project bench ty check bench
+        language: system
+        pass_filenames: false
+        files: ^bench/
+      - id: dart-format
+        name: dart format
+        entry: dart format --set-exit-if-changed
+        language: system
+        files: ^app/.*\.dart$
+      - id: dart-analyze
+        name: dart analyze
+        entry: dart analyze
+        language: system
+        pass_filenames: false
+        files: ^app/.*\.dart$

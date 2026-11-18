@@ -1,0 +1,156 @@
+# Placeholder values until vendor-check.md (task T011) exists. No secrets here.
+version: 1
+engines:
+  - id: fake
+    display_name: Fake (tests)
+    adapter: fake
+    runs_on: device
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: true
+    cost_usd_per_hour: 0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: false
+      terms_source: vendor-check.md#fake
+      terms_checked_on: unverified
+    options: {}
+  - id: apple-ondevice
+    display_name: Apple on-device
+    adapter: apple_speech
+    runs_on: device
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: true
+    cost_usd_per_hour: 0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: false
+      terms_source: vendor-check.md#apple-ondevice
+      terms_checked_on: unverified
+    options: {}
+  - id: android-ondevice
+    display_name: Android on-device
+    adapter: android_speech
+    runs_on: device
+    platforms: [bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: true
+    cost_usd_per_hour: 0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: false
+      terms_source: vendor-check.md#android-ondevice
+      terms_checked_on: unverified
+    options: {}
+  - id: agora-rtstt
+    display_name: Agora RT-STT
+    adapter: agora_rtstt
+    runs_on: cloud
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: false
+    cost_usd_per_hour: 1.0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: true
+      terms_source: vendor-check.md#agora-rtstt
+      terms_checked_on: unverified
+    options: {}
+  - id: google-stt-he
+    display_name: Google STT
+    adapter: google_streaming
+    runs_on: cloud
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: false
+    cost_usd_per_hour: 1.44
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: true
+      terms_source: vendor-check.md#google-stt-he
+      terms_checked_on: unverified
+    options: {}
+  - id: azure-speech-he
+    display_name: Azure Speech
+    adapter: azure_streaming
+    runs_on: cloud
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: true
+    supports_speaker_changes: false
+    can_be_fallback: false
+    cost_usd_per_hour: 1.0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: true
+      terms_source: vendor-check.md#azure-speech-he
+      terms_checked_on: unverified
+    options: {}
+  - id: soniox-rt
+    display_name: Soniox real-time
+    adapter: soniox_streaming
+    runs_on: cloud
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: true
+    supports_speaker_changes: true
+    can_be_fallback: false
+    cost_usd_per_hour: 0.12
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: true
+      terms_source: vendor-check.md#soniox-rt
+      terms_checked_on: unverified
+    options: {}
+  - id: speechmatics-rt
+    display_name: Speechmatics real-time
+    adapter: speechmatics_streaming
+    runs_on: cloud
+    platforms: [ios, bench]
+    languages: [he, en]
+    supports_code_switching: true
+    supports_speaker_changes: true
+    can_be_fallback: false
+    cost_usd_per_hour: 1.0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: true
+      terms_source: vendor-check.md#speechmatics-rt
+      terms_checked_on: unverified
+    options: {}
+  - id: whisper-ivrit-local
+    display_name: faster-whisper + ivrit.ai
+    adapter: whisper_local
+    runs_on: mac
+    platforms: [bench]
+    languages: [he, en]
+    supports_code_switching: false
+    supports_speaker_changes: false
+    can_be_fallback: false
+    cost_usd_per_hour: 0
+    privacy:
+      retains_audio: false
+      trains_on_audio: false
+      opt_out_required: false
+      terms_source: vendor-check.md#whisper-ivrit-local
+      terms_checked_on: unverified
+    options: {}
