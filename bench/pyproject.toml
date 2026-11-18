@@ -33,6 +33,7 @@ build-backend = "uv_build"
 
 [tool.ruff]
 target-version = "py313"
+line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "UP", "SIM", "C4", "PTH", "RET", "PIE", "PERF", "E722", "BLE", "TRY", "ANN", "D"]
@@ -44,3 +45,7 @@ convention = "google"
 "tests/**" = ["D"]
 
 [tool.ty]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

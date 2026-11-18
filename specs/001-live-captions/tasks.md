@@ -78,29 +78,29 @@
 
 **⚠️ CRITICAL**: no user story work can begin until this phase is complete.
 
-- [ ] T012 Implement frozen Pydantic v2 models (`ConfigDict(frozen=True, extra="forbid")`, tuple collections) in `bench/src/itabench/models.py`:
+- [X] T012 Implement frozen Pydantic v2 models (`ConfigDict(frozen=True, extra="forbid")`, tuple collections) in `bench/src/itabench/models.py`:
   - `AudioFrame`, `SpeechSpan`
   - the seven events as a discriminated union on `type`
   - `EngineProfile`, `PipelineConfig`, `TestClip`, `Reference`, `EvaluationResult`
   - every field per `data-model.md`
 
   **Verify:** `uv run ty check` passes; T014 passes
-- [ ] T013 [P] Implement `Clock` (Protocol), `SystemClock` and `FakeClock` (manual `advance(ms)`) in `bench/src/itabench/clock.py`. **Verify:** T014's tests use `FakeClock`, and no test sleeps
-- [ ] T014 [P] Write the contract tests in `bench/tests/test_contract.py`:
+- [X] T013 [P] Implement `Clock` (Protocol), `SystemClock` and `FakeClock` (manual `advance(ms)`) in `bench/src/itabench/clock.py`. **Verify:** T014's tests use `FakeClock`, and no test sleeps
+- [X] T014 [P] Write the contract tests in `bench/tests/test_contract.py`:
   - (a) every `shared/fixtures/**/*.events.jsonl` line (including `native/`) validates against `shared/engine-events.schema.json` **and** parses into the event model
   - (b) every model's JSON dump validates against the schema
   - (c) a schema field renamed in a temporary copy makes (a) fail
 
   **Verify:** `uv run pytest bench/tests/test_contract.py` passes
-- [ ] T015 [P] Write the profile and pipeline config tests in `bench/tests/test_profiles.py`:
+- [X] T015 [P] Write the profile and pipeline config tests in `bench/tests/test_profiles.py`:
   - each of these raises: device profile with non-zero cost; `can_be_fallback` on cloud; `retains_audio: true` opened; `trains_on_audio` with no opt-out; unknown adapter
   - an unknown key in `pipeline.yaml` raises
 
   **Verify:** passes, and fails if any rule is removed from `profiles.py`
-- [ ] T016 Implement the `EngineAdapter` Protocol (`open`, `push_audio`, `finish`, `cancel`, `events`) and an adapter registry keyed by `adapter` in `bench/src/itabench/contract.py`. **Verify:** `uv run ty check` flags a deliberately non-conforming dummy class in a scratch test, which is then deleted
-- [ ] T017 Implement loading of `shared/engines.yaml` and `shared/pipeline.yaml` into models in `bench/src/itabench/profiles.py`. Loading enforces every validation rule, including the privacy gate, plus the VAD model sha256 check. **Verify:** T015 passes
-- [ ] T018 [P] Implement `FakeEngine` (adapter key `fake`) in `bench/src/itabench/engines/fake.py`. It replays a fixture event log against an injected `Clock`. **Verify:** `bench/tests/test_fake_engine.py`: `partial-then-final` gives exactly one final, and with `cancel-midstream` nothing follows `closed`
-- [ ] T019 Implement the real-time feeder in `bench/src/itabench/streaming.py`:
+- [X] T016 Implement the `EngineAdapter` Protocol (`open`, `push_audio`, `finish`, `cancel`, `events`) and an adapter registry keyed by `adapter` in `bench/src/itabench/contract.py`. **Verify:** `uv run ty check` flags a deliberately non-conforming dummy class in a scratch test, which is then deleted
+- [X] T017 Implement loading of `shared/engines.yaml` and `shared/pipeline.yaml` into models in `bench/src/itabench/profiles.py`. Loading enforces every validation rule, including the privacy gate, plus the VAD model sha256 check. **Verify:** T015 passes
+- [X] T018 [P] Implement `FakeEngine` (adapter key `fake`) in `bench/src/itabench/engines/fake.py`. It replays a fixture event log against an injected `Clock`. **Verify:** `bench/tests/test_fake_engine.py`: `partial-then-final` gives exactly one final, and with `cancel-midstream` nothing follows `closed`
+- [X] T019 Implement the real-time feeder in `bench/src/itabench/streaming.py`:
   - read a validated 16 kHz mono WAV
   - push 20 ms `AudioFrame`s paced by the `Clock`
   - consume `events()` concurrently
@@ -108,8 +108,8 @@
   - append 5 s of silence before `finish()`
 
   **Verify:** `bench/tests/test_streaming.py` with `FakeClock` + `FakeEngine` gives the expected arrival times
-- [ ] T020 Implement `SpeechGate` in `bench/src/itabench/speech_gate.py`: Silero ONNX via `onnxruntime`, with thresholds and padding from `PipelineConfig`. It outputs gated frames and `SpeechSpan`s, and has an `enabled=False` passthrough. **Verify:** `bench/tests/test_speech_gate.py`: `silence-5s.wav` → 0 frames passed and 0 spans; `speech-short.wav` → ≥ 1 span with onset < 1 s
-- [ ] T021 Implement the results store in `bench/src/itabench/results_store.py`:
+- [X] T020 Implement `SpeechGate` in `bench/src/itabench/speech_gate.py`: Silero ONNX via `onnxruntime`, with thresholds and padding from `PipelineConfig`. It outputs gated frames and `SpeechSpan`s, and has an `enabled=False` passthrough. **Verify:** `bench/tests/test_speech_gate.py`: `silence-5s.wav` → 0 frames passed and 0 spans; `speech-short.wav` → ≥ 1 span with onset < 1 s
+- [X] T021 Implement the results store in `bench/src/itabench/results_store.py`:
   - path `bench/results/<engine>/<cleanup>/<vad>/<clip>.{events.jsonl,json}`
   - write to a temp file, then atomically replace (XV)
 
@@ -127,22 +127,22 @@
 
 ### Tests for User Story 2
 
-- [ ] T022 [P] [US2] Write normalization and WER tests in `bench/tests/test_metrics_wer.py`: niqqud, final letters, geresh, punctuation, digits↔words, the by-language split of a mixed reference, and Hebrew CER. **Verify:** passes, and each case fails if its normalization rule is removed
-- [ ] T023 [P] [US2] Write latency tests in `bench/tests/test_metrics_latency.py`, using the `shared/fixtures/latency-basic.*` files and asserting the numbers in `latency-basic.expected.json`. **Verify:** passes
-- [ ] T024 [P] [US2] Write made-up-word tests in `bench/tests/test_metrics_hallucination.py`: finals inside `non_speech` intervals are counted, and finals outside them are not. **Verify:** passes
-- [ ] T025 [P] [US2] Write speaker-change recall tests in `bench/tests/test_metrics_speakers.py` (±1 s tolerance, with a miss and a false alarm). **Verify:** passes
+- [X] T022 [P] [US2] Write normalization and WER tests in `bench/tests/test_metrics_wer.py`: niqqud, final letters, geresh, punctuation, digits↔words, the by-language split of a mixed reference, and Hebrew CER. **Verify:** passes, and each case fails if its normalization rule is removed
+- [X] T023 [P] [US2] Write latency tests in `bench/tests/test_metrics_latency.py`, using the `shared/fixtures/latency-basic.*` files and asserting the numbers in `latency-basic.expected.json`. **Verify:** passes
+- [X] T024 [P] [US2] Write made-up-word tests in `bench/tests/test_metrics_hallucination.py`: finals inside `non_speech` intervals are counted, and finals outside them are not. **Verify:** passes
+- [X] T025 [P] [US2] Write speaker-change recall tests in `bench/tests/test_metrics_speakers.py` (±1 s tolerance, with a miss and a false alarm). **Verify:** passes
 - [ ] T026 [P] [US2] Write failure-isolation tests in `bench/tests/test_run_isolation.py`: with 3 fake engines where one raises mid-clip, the other two are scored, the log has `processed=3 succeeded=2 failed=1`, and the CLI exits non-zero. **Verify:** passes
 
 ### Implementation for User Story 2
 
 - [ ] T027 [US2] Implement the Typer CLI skeleton in `bench/src/itabench/cli.py`, with `align`, `run`, `score`, `report` and `check-engine <id> [--record DIR]` per `contracts/bench-cli.md`, and logging via `logging` (no `print` outside report output). **Verify:** `uv run itabench --help` lists all five commands
 - [ ] T028 [US2] Implement `check-engine` in `bench/src/itabench/check.py`. It opens the real adapter with keys from `bench/.env`, streams `speech-short.wav` and then `silence-5s.wav`, and checks that the events validate and that silence produces no final text. `--record` saves raw vendor messages to `shared/fixtures/vendor/<id>/` (stored once and used by both test suites). **Verify:** `uv run itabench check-engine fake` exits 0
-- [ ] T029 [P] [US2] Implement clip and reference loading in `bench/src/itabench/data.py`: validate WAVs (format, 16 kHz mono after conversion, duration), require `consent: true` + `consent_date`, and compute sha256. **Verify:** `bench/tests/test_data.py` rejects a clip with no consent and a clip with the wrong sample rate
-- [ ] T030 [P] [US2] Implement normalization (research R-4) in `bench/src/itabench/metrics/normalize.py`. **Verify:** T022 passes
-- [ ] T031 [P] [US2] Implement WER/CER overall and by language in `bench/src/itabench/metrics/wer.py`. **Verify:** T022 passes
-- [ ] T032 [P] [US2] Implement the shared latency definition (research R-3) in `bench/src/itabench/metrics/latency.py`, reading the definitions from `PipelineConfig`. **Verify:** T023 passes
-- [ ] T033 [P] [US2] Implement made-up-word counting in `bench/src/itabench/metrics/hallucination.py`. **Verify:** T024 passes
-- [ ] T034 [P] [US2] Implement speaker-change recall in `bench/src/itabench/metrics/speakers.py`. **Verify:** T025 passes
+- [X] T029 [P] [US2] Implement clip and reference loading in `bench/src/itabench/data.py`: validate WAVs (format, 16 kHz mono after conversion, duration), require `consent: true` + `consent_date`, and compute sha256. **Verify:** `bench/tests/test_data.py` rejects a clip with no consent and a clip with the wrong sample rate
+- [X] T030 [P] [US2] Implement normalization (research R-4) in `bench/src/itabench/metrics/normalize.py`. **Verify:** T022 passes
+- [X] T031 [P] [US2] Implement WER/CER overall and by language in `bench/src/itabench/metrics/wer.py`. **Verify:** T022 passes
+- [X] T032 [P] [US2] Implement the shared latency definition (research R-3) in `bench/src/itabench/metrics/latency.py`, reading the definitions from `PipelineConfig`. **Verify:** T023 passes
+- [X] T033 [P] [US2] Implement made-up-word counting in `bench/src/itabench/metrics/hallucination.py`. **Verify:** T024 passes
+- [X] T034 [P] [US2] Implement speaker-change recall in `bench/src/itabench/metrics/speakers.py`. **Verify:** T025 passes
 - [ ] T035 [P] [US2] Implement the cleanup variants `none`, `rnnoise` and `deepfilternet` in `bench/src/itabench/cleanup/` (`__init__.py` factory + one module each). **Verify:** `bench/tests/test_cleanup.py`: each variant returns 16 kHz mono of the same length for `speech-short.wav`
 - [ ] T036 [P] [US2] Build the Swift package `bench/tools/apple-speech/` with two subcommands:
   - `recognize`: stdin PCM → `SpeechAnalyzer`/`SFSpeechRecognizer` with on-device recognition → schema events as JSONL on stdout, and it reports whether `he-IL` on-device is available
