@@ -30,7 +30,7 @@ Itai is at a loud café or bar with one or two people. He sets his phone on the 
 
 **Acceptance Scenarios**:
 
-1. **Given** captions are running, **When** someone speaks, **Then** a provisional guess of their words appears within 1 second and becomes final within 2 seconds.
+1. **Given** captions are running, **When** someone speaks, **Then** a provisional guess of their words appears within 1 second of their starting to speak, and becomes final within 2 seconds of their stopping (90% of the time; SC-001, SC-002).
 2. **Given** captions are running, **When** a speaker switches from Hebrew to English mid-sentence, **Then** both parts are captioned in the language spoken, without the switched words being dropped.
 3. **Given** captions are running, **When** nobody speaks but there is background clatter or music, **Then** no made-up words appear.
 4. **Given** captions are on screen, **When** Itai glances from arm's length, **Then** the newest line is the most prominent, and provisional text looks visibly different from final text.
@@ -171,7 +171,7 @@ Itai's grandmother uses the app on her own Android phone, in a simple mode: one 
 - **Caption Session**: one continuous run of captioning. It has a start and end time, language mode, active engine, and an ordered list of caption segments. Its text is discarded when the session ends unless the user exports it.
 - **Caption Segment**: a stretch of recognized text. It has provisional or final status, a time span, a detected language, and whether a speaker change precedes it.
 - **Engine Profile**: a selectable speech-recognition option. It has its name, supported languages, estimated cost per hour, whether it runs on the device or remotely, and whether it can be the offline fallback.
-- **Settings**: active engine, offline fallback engine, language mode, display mode (standard/simple), test mode (on/off), optional spending cap, and engine access keys.
+- **Settings**: active engine, offline fallback engine, language mode, display mode (standard/simple), test mode (on/off), and optional spending cap. Engine access keys are entered in settings but stored separately, in the phone's secure keychain.
 - **Test Clip**: a consented recording from a target situation. It has its situation type, language (Hebrew/English/mixed) and a hand-corrected reference transcript.
 - **Session Stats**: speed and reliability figures for one Caption Session (see FR-023). They're stored on the device, never contain audio or text, and the user can delete them.
 - **Evaluation Result**: the scores of one engine on one clip. It has accuracy, time to first word, time to final text and cost.
@@ -180,8 +180,8 @@ Itai's grandmother uses the app on her own Android phone, in a simple mode: one 
 
 ### Measurable Outcomes
 
-- **SC-001**: In 90% of utterances, a provisional guess of the words appears within 1 second of their being spoken.
-- **SC-002**: In 90% of utterances, final text appears within 2 seconds of the speaker finishing.
+- **SC-001**: In 90% of utterances, a provisional guess of the words appears within 1 second of the moment speech is detected starting. This is measured the same way in the evaluation and in real use.
+- **SC-002**: In 90% of utterances, final text appears within 2 seconds of the moment speech is detected ending. This is measured the same way in the evaluation and in real use.
 - **SC-003**: Word error rate in noisy one-to-one and group situations meets per-language targets (Hebrew, English, mixed). These targets are set and locked from the engine evaluation before the MVP is built.
 - **SC-004**: Silence-only and noise-only test clips produce zero made-up words.
 - **SC-005**: At least 80% of speaker turn changes in annotated group clips are marked.
@@ -189,7 +189,7 @@ Itai's grandmother uses the app on her own Android phone, in a simple mode: one 
 - **SC-007**: 2 hours of continuous captioning, including periods with the phone locked, uses no more than 60% of a full phone battery.
 - **SC-008**: From a locked phone to live captions takes at most 2 taps and 3 seconds.
 - **SC-009** *(post-v1)*: Grandma starts the app in simple mode and follows a conversation without help, on her first try.
-- **SC-010**: v1 is accepted when SC-001 to SC-008 pass (SC-001, SC-002 and SC-007 measured from real-use session stats) and Itai has used it for real at least 5 times across café and meeting situations without needing to ask people to repeat themselves more often than he would without it.
+- **SC-010**: v1 is accepted when SC-001 to SC-008 pass (SC-001, SC-002 and SC-007 measured from real-use session stats) and Itai has used it for real at least 5 times across café and meeting situations (MISSION: "used it for real at least 5 times in G1 and G3").
 
 ## Assumptions
 
@@ -197,9 +197,9 @@ Itai's grandmother uses the app on her own Android phone, in a simple mode: one 
 - **Users**: there are two people (Itai and his grandmother), each with their own device. There are no accounts, sync or sharing.
 - **Devices**: v1 is iPhone only. The Android phone (grandma, simple mode) and the Mac come in later releases.
 - **Microphone**: the phone's built-in mic is the default. The evaluation decides whether an external mic is needed.
-- **Connectivity**: cloud engines need an internet connection. v1 includes an on-device fallback for connection loss (FR-024). The speed and accuracy targets (SC-001 to SC-003) apply to the primary engine, not the fallback.
+- **Connectivity**: cloud engines need an internet connection. v1 includes an on-device fallback for connection loss (FR-024). The speed and accuracy targets (SC-001 to SC-003) apply to the active engine, not the fallback.
 - **Accuracy targets**: SC-003 thresholds are intentionally left to be set from the evaluation, at the user's request.
 - **Spending**: there's no spending cap by default. A cap is optional and set in settings.
 - **Saving transcripts**: in v1, saving means exporting the current session as a text file (FR-019), with stats added in test mode (FR-025). An in-app transcript history comes later.
 - **Consent and legality**: test clips are recorded only with the consent of the people in them. Live captioning without storing audio is assumed to be allowed for personal use, but should be checked before a cloud engine is chosen.
-- **Evaluation**: the engine evaluation runs on a computer (not the phone) and is used by Itai only.
+- **Evaluation**: the engine evaluation is driven from a computer and used by Itai only. The Android on-device baseline runs on a connected Android phone or emulator.
