@@ -146,8 +146,12 @@ final class EngineProfile with JsonValue {
   /// Adapter-specific options.
   final Map<String, Object> options;
 
-  /// Throws [PrivacyGateException] if the engine keeps audio, or trains on it with no opt-out.
+  /// Throws [PrivacyGateException] if the terms are unverified, the engine keeps
+  /// audio, or it trains on audio with no opt-out.
   void assertOpenable() {
+    if (privacy.termsCheckedOn.trim().toLowerCase() == 'unverified') {
+      throw PrivacyGateException('$id: vendor terms not verified');
+    }
     if (privacy.retainsAudio) {
       throw PrivacyGateException('$id: vendor retains audio');
     }

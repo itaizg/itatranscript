@@ -24,7 +24,7 @@ Map<String, Object?> _fake() => <String, Object?>{
     'trains_on_audio': false,
     'opt_out_required': false,
     'terms_source': 'x',
-    'terms_checked_on': 'unverified',
+    'terms_checked_on': '2026-11-19',
   },
   'options': <String, Object?>{},
 };
@@ -72,6 +72,15 @@ void main() {
       () => EngineProfile.fromJson(_with(<String, Object?>{'surprise': 1})),
       throwsFormatException,
     );
+  });
+
+  test('the privacy gate refuses an engine whose terms are unverified', () {
+    final EngineProfile unverified = EngineProfile.fromJson(
+      _with(<String, Object?>{
+        'privacy': _privacy(<String, Object?>{'terms_checked_on': 'unverified'}),
+      }),
+    );
+    expect(unverified.assertOpenable, throwsA(isA<PrivacyGateException>()));
   });
 
   test('the privacy gate refuses a retaining engine, and one that trains with no opt-out', () {
