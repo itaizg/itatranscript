@@ -24,6 +24,8 @@ def load_events(path: Path) -> tuple[EngineEvent, ...]:
 class FakeEngine:
     """Replays events at their recorded ``t_ms`` offsets after ``open``."""
 
+    version = "fake-1"
+
     def __init__(self, events: tuple[EngineEvent, ...], clock: Clock) -> None:
         """Create the engine from a log and a clock."""
         self._log = events

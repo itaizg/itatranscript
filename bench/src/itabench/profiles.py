@@ -7,8 +7,9 @@ import yaml
 
 from itabench.contract import KNOWN_ADAPTERS
 from itabench.models import EnginesFile, EngineProfile, PipelineConfig
+from itabench.paths import REPO_ROOT
 
-SHARED_DIR = Path(__file__).resolve().parents[3] / "shared"
+SHARED_DIR = REPO_ROOT / "shared"
 
 
 class ProfileError(ValueError):

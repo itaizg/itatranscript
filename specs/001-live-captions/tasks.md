@@ -131,19 +131,19 @@
 - [X] T023 [P] [US2] Write latency tests in `bench/tests/test_metrics_latency.py`, using the `shared/fixtures/latency-basic.*` files and asserting the numbers in `latency-basic.expected.json`. **Verify:** passes
 - [X] T024 [P] [US2] Write made-up-word tests in `bench/tests/test_metrics_hallucination.py`: finals inside `non_speech` intervals are counted, and finals outside them are not. **Verify:** passes
 - [X] T025 [P] [US2] Write speaker-change recall tests in `bench/tests/test_metrics_speakers.py` (±1 s tolerance, with a miss and a false alarm). **Verify:** passes
-- [ ] T026 [P] [US2] Write failure-isolation tests in `bench/tests/test_run_isolation.py`: with 3 fake engines where one raises mid-clip, the other two are scored, the log has `processed=3 succeeded=2 failed=1`, and the CLI exits non-zero. **Verify:** passes
+- [X] T026 [P] [US2] Write failure-isolation tests in `bench/tests/test_run_isolation.py`: with 3 fake engines where one raises mid-clip, the other two are scored, the log has `processed=3 succeeded=2 failed=1`, and the CLI exits non-zero. **Verify:** passes
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] Implement the Typer CLI skeleton in `bench/src/itabench/cli.py`, with `align`, `run`, `score`, `report` and `check-engine <id> [--record DIR]` per `contracts/bench-cli.md`, and logging via `logging` (no `print` outside report output). **Verify:** `uv run itabench --help` lists all five commands
-- [ ] T028 [US2] Implement `check-engine` in `bench/src/itabench/check.py`. It opens the real adapter with keys from `bench/.env`, streams `speech-short.wav` and then `silence-5s.wav`, and checks that the events validate and that silence produces no final text. `--record` saves raw vendor messages to `shared/fixtures/vendor/<id>/` (stored once and used by both test suites). **Verify:** `uv run itabench check-engine fake` exits 0
+- [X] T027 [US2] Implement the Typer CLI skeleton in `bench/src/itabench/cli.py`, with `align`, `run`, `score`, `report` and `check-engine <id> [--record DIR]` per `contracts/bench-cli.md`, and logging via `logging` (no `print` outside report output). **Verify:** `uv run itabench --help` lists all five commands
+- [X] T028 [US2] Implement `check-engine` in `bench/src/itabench/check.py`. It opens the real adapter with keys from `bench/.env`, streams `speech-short.wav` and then `silence-5s.wav`, and checks that the events validate and that silence produces no final text. `--record` saves raw vendor messages to `shared/fixtures/vendor/<id>/` (stored once and used by both test suites). **Verify:** `uv run itabench check-engine fake` exits 0
 - [X] T029 [P] [US2] Implement clip and reference loading in `bench/src/itabench/data.py`: validate WAVs (format, 16 kHz mono after conversion, duration), require `consent: true` + `consent_date`, and compute sha256. **Verify:** `bench/tests/test_data.py` rejects a clip with no consent and a clip with the wrong sample rate
 - [X] T030 [P] [US2] Implement normalization (research R-4) in `bench/src/itabench/metrics/normalize.py`. **Verify:** T022 passes
 - [X] T031 [P] [US2] Implement WER/CER overall and by language in `bench/src/itabench/metrics/wer.py`. **Verify:** T022 passes
 - [X] T032 [P] [US2] Implement the shared latency definition (research R-3) in `bench/src/itabench/metrics/latency.py`, reading the definitions from `PipelineConfig`. **Verify:** T023 passes
 - [X] T033 [P] [US2] Implement made-up-word counting in `bench/src/itabench/metrics/hallucination.py`. **Verify:** T024 passes
 - [X] T034 [P] [US2] Implement speaker-change recall in `bench/src/itabench/metrics/speakers.py`. **Verify:** T025 passes
-- [ ] T035 [P] [US2] Implement the cleanup variants `none`, `rnnoise` and `deepfilternet` in `bench/src/itabench/cleanup/` (`__init__.py` factory + one module each). **Verify:** `bench/tests/test_cleanup.py`: each variant returns 16 kHz mono of the same length for `speech-short.wav`
+- [X] T035 [P] [US2] Implement the cleanup variants `none`, `rnnoise` and `deepfilternet` in `bench/src/itabench/cleanup/` (`__init__.py` factory + one module each). **Verify:** `bench/tests/test_cleanup.py`: each variant returns 16 kHz mono of the same length for `speech-short.wav`
 - [ ] T036 [P] [US2] Build the Swift package `bench/tools/apple-speech/` with two subcommands:
   - `recognize`: stdin PCM → `SpeechAnalyzer`/`SFSpeechRecognizer` with on-device recognition → schema events as JSONL on stdout, and it reports whether `he-IL` on-device is available
   - `voiceproc`: applies `AVAudioEngine` voice processing in manual-rendering mode. If manual rendering rejects voice processing, record that in `specs/001-live-captions/lessons.md` and implement loopback (play + capture) instead
@@ -156,8 +156,8 @@
 - [ ] T040 [P] [US2] Implement the Agora RT-STT adapter in `bench/src/itabench/engines/agora_rtstt.py`, plus `bench/tests/adapters/test_agora.py` from recordings. **Verify:** same as T038
 - [ ] T041 [P] [US2] Implement the adapter for the Soniox/Speechmatics choice from T011, emitting `speaker_change` from vendor labels, in `bench/src/itabench/engines/<choice>_rt.py`, plus `bench/tests/adapters/test_<choice>.py` from recordings. **Verify:** same as T038, and a recording with two speakers produces a `speaker_change`
 - [ ] T042 [P] [US2] Implement the local Whisper adapter in `bench/src/itabench/engines/whisper_local.py`: `faster-whisper` with the ivrit.ai checkpoint pinned in `shared/engines.yaml` `options` and used as-is; a 10 s rolling window with 1 s hops; partials every hop; finals when a prefix is stable across 2 hops. **Verify:** `bench/tests/adapters/test_whisper_local.py` checks the finalization policy with a stubbed transcriber, and `check-engine whisper-ivrit-local` exits 0
-- [ ] T043 [US2] Implement `itabench align` in `bench/src/itabench/align.py`: hand-corrected `refs/<clip>.txt` (lines tagged `he|en`) → `refs/<clip>.json` with words + lang, `non_speech` intervals ≥ 1 s from `SpeechGate`, and empty `turn_changes_ms`. Uncertain spans are flagged `needs_check`. **Verify:** `bench/tests/test_align.py` on a tiny fixture produces the expected JSON
-- [ ] T044 [US2] Implement `itabench run` in `bench/src/itabench/run.py`:
+- [X] T043 [US2] Implement `itabench align` in `bench/src/itabench/align.py`: hand-corrected `refs/<clip>.txt` (lines tagged `he|en`) → `refs/<clip>.json` with words + lang, `non_speech` intervals ≥ 1 s from `SpeechGate`, and empty `turn_changes_ms`. Uncertain spans are flagged `needs_check`. **Verify:** `bench/tests/test_align.py` on a tiny fixture produces the expected JSON
+- [X] T044 [US2] Implement `itabench run` in `bench/src/itabench/run.py`:
   - loop over engines × cleanup × VAD on/off × clips: cleanup → `SpeechGate` (when on) → `streaming.py`
   - write through `results_store`
   - isolate each item (a single catch-all at the item boundary, logged with a stack trace)
@@ -165,8 +165,8 @@
   - skip privacy-gated profiles and count the skips
 
   **Verify:** T026 passes, and re-running one combination leaves one result
-- [ ] T045 [US2] Implement `itabench score` in `bench/src/itabench/score.py`, writing an `EvaluationResult` JSON per item with full provenance (clip sha256, engine version, `shared/` hashes, harness version, `ran_at`, status). **Verify:** `bench/tests/test_score.py` on fake-engine results gives the expected metrics, with every provenance field set
-- [ ] T046 [US2] Implement `itabench report` in `bench/src/itabench/report.py`, writing `bench/results/report.md`:
+- [X] T045 [US2] Implement `itabench score` in `bench/src/itabench/score.py`, writing an `EvaluationResult` JSON per item with full provenance (clip sha256, engine version, `shared/` hashes, harness version, `ran_at`, status). **Verify:** `bench/tests/test_score.py` on fake-engine results gives the expected metrics, with every provenance field set
+- [X] T046 [US2] Implement `itabench report` in `bench/src/itabench/report.py`, writing `bench/results/report.md`:
   - the R-4 normalization rules at the top
   - tables by engine × language × situation × cleanup × VAD (WER/CER, provisional/final p50/p90, made-up words, speaker recall, $/h)
   - a provenance appendix

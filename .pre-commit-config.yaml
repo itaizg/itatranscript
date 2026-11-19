@@ -9,7 +9,7 @@ repos:
     hooks:
       - id: ty
         name: ty check
-        entry: uv run --project bench ty check bench
+        entry: uv run --project bench ty check --project bench
         language: system
         pass_filenames: false
         files: ^bench/

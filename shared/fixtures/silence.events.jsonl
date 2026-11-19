@@ -1,0 +1,2 @@
+{"type": "health", "t_ms": 100, "state": "ok", "reason": "connected"}
+{"type": "closed", "t_ms": 200}

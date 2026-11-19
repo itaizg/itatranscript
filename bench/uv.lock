@@ -640,6 +640,7 @@ azure = [
 cleanup = [
     { name = "deepfilternet" },
     { name = "pyrnnoise" },
+    { name = "soxr" },
 ]
 google = [
     { name = "google-cloud-speech" },
@@ -670,6 +671,7 @@ requires-dist = [
     { name = "pyrnnoise", marker = "extra == 'cleanup'" },
     { name = "pyyaml" },
     { name = "soundfile" },
+    { name = "soxr", marker = "extra == 'cleanup'" },
     { name = "typer" },
     { name = "websockets" },
 ]

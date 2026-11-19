@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cleanup = ["pyrnnoise", "deepfilternet"]
+cleanup = ["pyrnnoise", "deepfilternet", "soxr"]
 local = ["faster-whisper"]
 google = ["google-cloud-speech"]
 azure = ["azure-cognitiveservices-speech"]
@@ -44,9 +44,15 @@ convention = "google"
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
 
-[tool.ty]
+[tool.ty.analysis]
+# Optional extras (cleanup, local, cloud SDKs) are not installed in the dev environment.
+allowed-unresolved-imports = ["soxr", "torch", "df.**", "pyrnnoise", "faster_whisper", "google.**", "azure.**"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.uv]
+# Rebuild the installed package whenever its sources change (used with UV_NO_EDITABLE=1).
+cache-keys = [{ file = "pyproject.toml" }, { file = "src/**/*.py" }]
