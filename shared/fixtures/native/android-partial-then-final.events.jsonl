@@ -1,0 +1,4 @@
+{"type":"partial","t_ms":400,"segment_id":"s1","text":"hel","lang":"en","start_ms":0}
+{"type":"partial","t_ms":700,"segment_id":"s1","text":"hello wor","lang":"en","start_ms":0}
+{"type":"final","t_ms":1200,"segment_id":"s1","text":"hello world","lang":"en","start_ms":0,"end_ms":1000}
+{"type":"closed","t_ms":1300}

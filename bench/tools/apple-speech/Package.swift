@@ -27,7 +27,7 @@ let package = Package(
     .testTarget(
       name: "AppleSpeechCoreTests",
       dependencies: ["AppleSpeechCore"],
-      resources: [.copy("../../../../../shared/fixtures/native")]
+      resources: [.copy("native")]
     ),
   ]
 )

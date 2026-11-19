@@ -44,6 +44,10 @@ kotlin {
     }
 }
 
+dependencies {
+    testImplementation(kotlin("test"))
+}
+
 flutter {
     source = "../.."
 }

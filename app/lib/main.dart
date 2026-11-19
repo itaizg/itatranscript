@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app.dart';
 import 'capture/audio_source.dart';
 import 'core/clock.dart';
+import 'engines/android_speech_adapter.dart';
 import 'engines/apple_speech_adapter.dart';
 import 'engines/engine_adapter.dart';
 import 'engines/fake_engine.dart';
@@ -78,6 +79,7 @@ Future<void> main() async {
   final SileroOnnxModel model = SileroOnnxModel(modelBytes);
   final AdapterRegistry registry = AdapterRegistry(<String, AdapterFactory>{
     'apple_speech': (EngineProfile p, Clock c) => AppleSpeechAdapter(),
+    'android_speech': (EngineProfile p, Clock c) => AndroidSpeechAdapter(),
     if (kDebugMode)
       'fake': (EngineProfile p, Clock c) =>
           FakeEngine(parseEventLog(debugFixture), c),
