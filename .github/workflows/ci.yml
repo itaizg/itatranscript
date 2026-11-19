@@ -7,7 +7,7 @@ permissions:
   contents: read
 jobs:
   pre-commit:
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
@@ -15,6 +15,7 @@ jobs:
         with:
           flutter-version: 3.50.0
           channel: stable
+      - run: brew install ktlint
       - run: flutter pub get
         working-directory: app
       - run: uv sync --locked

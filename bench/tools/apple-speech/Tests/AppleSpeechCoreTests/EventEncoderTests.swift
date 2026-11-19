@@ -14,10 +14,11 @@ final class EventEncoderTests: XCTestCase {
     try XCTUnwrap(JSONSerialization.jsonObject(with: Data(line.utf8)) as? NSDictionary)
   }
 
+  /// `shared/fixtures/native/<name>.events.jsonl`, found relative to this file.
   private func fixtureLines(_ name: String) throws -> [String] {
-    let url = try XCTUnwrap(
-      Bundle.module.url(
-        forResource: name, withExtension: "events.jsonl", subdirectory: "native"))
+    var url = URL(fileURLWithPath: #filePath)
+    for _ in 0..<6 { url.deleteLastPathComponent() }
+    url.appendPathComponent("shared/fixtures/native/\(name).events.jsonl")
     return try String(contentsOf: url, encoding: .utf8).split(separator: "\n").map(String.init)
   }
 
