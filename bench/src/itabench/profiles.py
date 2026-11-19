@@ -37,11 +37,14 @@ def validate_profile(profile: EngineProfile) -> None:
 
 
 def assert_openable(profile: EngineProfile) -> None:
-    """Refuse engines that keep audio, or train on it with no opt-out (FR-020).
+    """Refuse engines with unverified terms, that keep audio, or train on it with no opt-out (FR-020).
 
     ``opt_out_required: true`` means a vendor opt-out exists and must be applied.
     """
     privacy = profile.privacy
+    if privacy.terms_checked_on.strip().lower() == "unverified":
+        msg = f"{profile.id}: vendor terms not verified (see vendor-check.md)"
+        raise PrivacyGateError(msg)
     if privacy.retains_audio:
         msg = f"{profile.id}: vendor retains audio"
         raise PrivacyGateError(msg)
