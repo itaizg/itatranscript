@@ -60,7 +60,7 @@ final class AudioCapturePlugin: NSObject, FlutterPlugin, FlutterStreamHandler {
     let session = AVAudioSession.sharedInstance()
     // `.voiceChat` enables the system's echo cancellation and noise suppression. The spike may
     // switch to `.measurement` if it turns out to harm recognition (research R-6).
-    try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetoothHFP])
+    try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth])
     try session.setActive(true)
     try engine.inputNode.setVoiceProcessingEnabled(true)
 
