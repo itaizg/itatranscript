@@ -15,7 +15,6 @@ KNOWN_ADAPTERS = frozenset(
         "google_streaming",
         "azure_streaming",
         "soniox_streaming",
-        "speechmatics_streaming",
         "whisper_local",
     }
 )
