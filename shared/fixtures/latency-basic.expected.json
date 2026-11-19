@@ -1,0 +1,21 @@
+{
+  "percentile_method": "nearest-rank",
+  "provisional_ms": {
+    "values": [
+      400,
+      800,
+      200
+    ],
+    "p50": 400,
+    "p90": 800
+  },
+  "final_ms": {
+    "values": [
+      500,
+      900,
+      300
+    ],
+    "p50": 500,
+    "p90": 900
+  }
+}

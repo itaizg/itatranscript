@@ -1,0 +1,16 @@
+{
+  "spans": [
+    {
+      "onset_ms": 1000,
+      "offset_ms": 3000
+    },
+    {
+      "onset_ms": 6000,
+      "offset_ms": 8000
+    },
+    {
+      "onset_ms": 11000,
+      "offset_ms": 12000
+    }
+  ]
+}

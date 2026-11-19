@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -221,3 +221,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project
+bench/data/
+bench/results/
+bench/.env
+
+# Native toolchains
+.build/
+.swiftpm/
+DerivedData/
+.gradle/
+**/local.properties
+.dart_tool/

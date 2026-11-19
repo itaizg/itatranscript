@@ -1,0 +1,78 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  pre-commit:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+      - run: brew install ktlint
+      - run: flutter pub get
+        working-directory: app
+      - run: uv sync --locked
+        working-directory: bench
+      - run: uvx pre-commit run --all-files
+  bench-pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - run: uv sync --locked
+        working-directory: bench
+      - run: uv run pytest
+        working-directory: bench
+  flutter-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - if: hashFiles('app/pubspec.yaml') != ''
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+      - if: hashFiles('app/pubspec.yaml') != ''
+        run: flutter test
+        working-directory: app
+  swift-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - if: hashFiles('bench/tools/apple-speech/Package.swift') != ''
+        run: swift test
+        working-directory: bench/tools/apple-speech
+  ios-test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: 3.50.0
+          channel: stable
+      - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
+        run: flutter build ios --config-only --no-codesign && pod install --project-directory=ios
+        working-directory: app
+      - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
+        run: xcodebuild test -workspace Runner.xcworkspace -scheme Runner -destination 'platform=iOS Simulator,name=iPhone 16'
+        working-directory: app/ios
+  android-helper-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - if: hashFiles('bench/tools/android-speech/gradlew') != ''
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - if: hashFiles('bench/tools/android-speech/gradlew') != ''
+        run: ./gradlew test
+        working-directory: bench/tools/android-speech

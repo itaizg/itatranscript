@@ -1,0 +1,7 @@
+{"type": "partial", "t_ms": 1400, "segment_id": "s1", "text": "one", "lang": "en", "start_ms": 1000}
+{"type": "final", "t_ms": 3500, "segment_id": "s1", "text": "one two", "lang": "en", "start_ms": 1000, "end_ms": 3000}
+{"type": "partial", "t_ms": 6800, "segment_id": "s2", "text": "three", "lang": "en", "start_ms": 6000}
+{"type": "final", "t_ms": 8900, "segment_id": "s2", "text": "three four", "lang": "en", "start_ms": 6000, "end_ms": 8000}
+{"type": "partial", "t_ms": 11200, "segment_id": "s3", "text": "five", "lang": "en", "start_ms": 11000}
+{"type": "final", "t_ms": 12300, "segment_id": "s3", "text": "five six", "lang": "en", "start_ms": 11000, "end_ms": 12000}
+{"type": "closed", "t_ms": 12400}

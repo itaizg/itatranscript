@@ -1,0 +1,5 @@
+{"type": "health", "t_ms": 100, "state": "ok", "reason": "connected"}
+{"type": "partial", "t_ms": 500, "segment_id": "s1", "text": "one two", "lang": "en", "start_ms": 0}
+{"type": "health", "t_ms": 2500, "state": "lost", "reason": "socket closed"}
+{"type": "error", "t_ms": 2501, "code": "network", "message": "socket closed", "retryable": true}
+{"type": "closed", "t_ms": 2600}
