@@ -16,7 +16,8 @@ final class EventEncoderTests: XCTestCase {
 
   private func fixtureLines(_ name: String) throws -> [String] {
     let url = try XCTUnwrap(
-      Bundle.module.url(forResource: "native/\(name)", withExtension: "events.jsonl"))
+      Bundle.module.url(
+        forResource: name, withExtension: "events.jsonl", subdirectory: "native"))
     return try String(contentsOf: url, encoding: .utf8).split(separator: "\n").map(String.init)
   }
 
