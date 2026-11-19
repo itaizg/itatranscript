@@ -153,4 +153,10 @@ engines:
       opt_out_required: false
       terms_source: vendor-check.md#whisper-ivrit-local
       terms_checked_on: unverified
-    options: {}
+    options:
+      # Checkpoint id is NOT verified yet: confirm it on the first live run (task T042).
+      model: ivrit-ai/whisper-large-v3-ct2
+      compute_type: int8
+      window_s: 10
+      hop_ms: 1000
+      stable_hops: 2
