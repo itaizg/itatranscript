@@ -55,6 +55,11 @@ def test_training_without_opt_out_cannot_open(shared: Path) -> None:
         )
 
 
+def test_unverified_terms_cannot_open(shared: Path) -> None:
+    with pytest.raises(PrivacyGateError):
+        assert_openable(_profile(shared, privacy_over={"terms_checked_on": "unverified"}))
+
+
 def test_clean_profile_opens(shared: Path) -> None:
     assert_openable(_profile(shared))
 
