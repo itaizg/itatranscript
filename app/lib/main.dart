@@ -26,6 +26,7 @@ import 'models/settings.dart';
 import 'session/battery_watch.dart';
 import 'session/cost_meter.dart';
 import 'session/launch_action.dart';
+import 'session/launch_channel.dart';
 import 'session/session_controller.dart';
 import 'session/session_stats.dart';
 import 'session/settings_store.dart';
@@ -35,7 +36,7 @@ import 'export/transcript_export.dart';
 const String kInterimEngineId = 'apple-ondevice';
 
 /// Entry point: loads the shared files, builds the collaborators, and starts the app.
-Future<void> main(List<String> args) async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   Logger.root.level = kDebugMode ? Level.INFO : Level.WARNING;
   // Logs never contain caption text or keys; only error types and counts.
@@ -113,10 +114,7 @@ Future<void> main(List<String> args) async {
         stats: stats,
         exporter: const TranscriptExporter(),
         launch: decideLaunchAction(
-          launchArguments: <String, String>{
-            for (final String a in args)
-              if (a.contains('=')) a.split('=')[0]: a.split('=')[1],
-          },
+          launchArguments: await LaunchChannel().arguments(),
           lastStats: past.isEmpty ? null : past.last,
         ),
       ),

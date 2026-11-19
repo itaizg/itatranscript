@@ -7,6 +7,7 @@ import 'models/engine_profile.dart';
 import 'models/session_snapshot.dart';
 import 'models/settings.dart';
 import 'session/launch_action.dart';
+import 'session/launch_channel.dart';
 import 'session/session_controller.dart';
 import 'session/session_stats.dart';
 import 'session/settings_store.dart';
@@ -79,6 +80,12 @@ class _ItaTranscriptAppState extends State<ItaTranscriptApp> {
     widget.deps.settings.load().then((Settings s) {
       if (mounted) {
         setState(() => _scale = s.textScale);
+      }
+    });
+    LaunchChannel().listenForStart(() {
+      final SessionState state = _controller.snapshot.value.state;
+      if (state == SessionState.idle || state == SessionState.ended) {
+        unawaited(_start());
       }
     });
     final LaunchAction launch = widget.deps.launch;
