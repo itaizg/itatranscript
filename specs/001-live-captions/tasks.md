@@ -239,9 +239,10 @@
 - [X] T066 [US1] Implement `SettingsStore` in `app/lib/session/settings_store.dart`: one immutable `Settings` holding the only defaults, persisted to preferences; keys read and written through `flutter_secure_storage` and never logged. **Verify:** T056 passes
 - [X] T067 [US1] Implement `SessionController` in `app/lib/session/session_controller.dart`: owns the session, wires AudioSource → SpeechGate → adapter → assembler, exposes immutable snapshots, and contains the single per-session failure isolation point. **Verify:** T057 passes
 - [ ] T068 [US1] Implement the WebSocket adapter for the active engine chosen in `decision.md`, in `app/lib/engines/<engine_id>_adapter.dart`. It validates every vendor message (invalid → `error: invalid_message`), uses TLS only, and uses app-only keys. Add `app/test/adapters/<engine_id>_test.dart`, replaying the recordings from `assets/shared/fixtures/vendor/<engine_id>/` (the same files the harness tests use; no copy). **Verify:** the test passes, and a live session on the iPhone shows captions
-- [ ] T069 [US1] Implement the caption screen in `app/lib/ui/caption_screen.dart` per `contracts/caption-screen.md`: renders snapshots only; virtualized list; newest line largest; provisional text grey italic; RTL/LTR per segment; start/stop and language controls (the freeze slot is reserved for US3); dark default. **Verify:** `app/test/caption_screen_render_test.dart` golden or finder checks: provisional and final text styles differ, and a Hebrew segment is right-aligned
-- [ ] T070 [US1] Implement the settings screen in `app/lib/ui/settings_screen.dart`: engine picker (FR-013), language mode, app API key entry, $/h of the active engine (FR-014). **Verify:** a widget test confirms that picking an engine updates `Settings.active_engine_id`
+- [X] T069 [US1] Implement the caption screen in `app/lib/ui/caption_screen.dart` per `contracts/caption-screen.md`: renders snapshots only; virtualized list; newest line largest; provisional text grey italic; RTL/LTR per segment; start/stop and language controls (the freeze slot is reserved for US3); dark default. **Verify:** `app/test/caption_screen_render_test.dart` golden or finder checks: provisional and final text styles differ, and a Hebrew segment is right-aligned
+- [X] T070 [US1] Implement the settings screen in `app/lib/ui/settings_screen.dart`: engine picker (FR-013), language mode, app API key entry, $/h of the active engine (FR-014). **Verify:** a widget test confirms that picking an engine updates `Settings.active_engine_id`
 - [ ] T071 [US1] Wire everything in `app/lib/main.dart` with injected collaborators (VI). **Verify:** `flutter test` passes, and the app builds and runs on the iPhone
+  **Status (2026-11-19)**: wired in `app/lib/app.dart` and `main.dart`; `test/app_smoke_test.dart` passes. Still open: building and running on the iPhone (needs Xcode and the iOS native plugins).
 - [ ] T072 [US1] Run a quickstart V2 **smoke check** in a café on the iPhone. Record the results in `specs/001-live-captions/validation.md` and the surprises in `lessons.md`. **Verify:** captions appear for both Hebrew and English speech, mixed sentences keep both languages, and 30 s of clatter produced no text. Measured S1/S2 come from session stats in T095 (Quality Gates); the per-utterance numbers from `latency.dart` logged here are indicative only, and logs never contain text
 
 **Checkpoint**: MVP is usable in a café.
@@ -254,9 +255,10 @@
 
 **Independent Test**: quickstart V3.
 
-- [ ] T073 [P] [US3] Write view-controller tests in `app/test/caption_view_controller_test.dart`: freeze keeps the visible lines fixed while 20 new segments arrive; resume jumps to the newest; scrolling back pauses auto-scroll; no segment is lost. **Verify:** passes, and fails if freeze drops events
-- [ ] T074 [US3] Implement view state (`following | frozen | scrolledBack`), separate from `SessionState`, in `app/lib/ui/caption_view_controller.dart`. **Verify:** T073 passes
+- [X] T073 [P] [US3] Write view-controller tests in `app/test/caption_view_controller_test.dart`: freeze keeps the visible lines fixed while 20 new segments arrive; resume jumps to the newest; scrolling back pauses auto-scroll; no segment is lost. **Verify:** passes, and fails if freeze drops events
+- [X] T074 [US3] Implement view state (`following | frozen | scrolledBack`), separate from `SessionState`, in `app/lib/ui/caption_view_controller.dart`. **Verify:** T073 passes
 - [ ] T075 [US3] Add the freeze button and the "jump to live" chip in `app/lib/ui/caption_screen.dart`, driven by the view controller (FR-009, FR-010). **Verify:** run quickstart V3 on the iPhone and record it in `validation.md`
+  **Status (2026-11-19)**: freeze button and jump-to-live chip are built and widget-tested; the V3 run on the iPhone and `validation.md` entry are still open.
 
 ---
 
@@ -266,7 +268,7 @@
 
 **Independent Test**: quickstart V4.
 
-- [ ] T076 [US4] Render the speaker-change divider with a colored dot from `speaker_change_before` in `app/lib/ui/caption_screen.dart` (FR-006). **Verify:** a widget test shows a divider before a segment with `speaker_change_before: true`, and none otherwise
+- [X] T076 [US4] Render the speaker-change divider with a colored dot from `speaker_change_before` in `app/lib/ui/caption_screen.dart` (FR-006). **Verify:** a widget test shows a divider before a segment with `speaker_change_before: true`, and none otherwise
 - [ ] T077 [US4] **Only if `decision.md` says the heuristic is needed (R-8)**:
   - add `speaker_heuristic` thresholds to `shared/pipeline.yaml`
   - implement `bench/src/itabench/speaker_heuristic.py` and `app/lib/session/speaker_change_heuristic.dart`
@@ -287,6 +289,7 @@
 - [ ] T080 [P] [US5] Add the `StartCaptionsIntent` App Intent in `app/ios/Runner/StartCaptionsIntent.swift`; it opens the app with `start=true`. **Verify:** running it from Shortcuts starts a session
 - [ ] T081 [P] [US5] Add the widget extension `app/ios/CaptionsWidget/` with a `ControlWidget` and an accessory Lock Screen widget, both running `StartCaptionsIntent`. **Verify:** both appear in the Control Center / Lock Screen gallery on the iPhone
 - [ ] T082 [US5] Handle `start=true` to auto-start, in a plain function `app/lib/session/launch_action.dart` (launch arguments plus the last stats entry → `startSession | showStoppedNotice(time) | none`) called from `app/lib/main.dart`. Show "captions stopped at HH:MM" after an OS kill (`end_reason: os_killed`). Add `app/test/launch_action_test.dart` covering all three outcomes (FR-011, Principle IV). **Verify:** the test passes, then run quickstart V5 (stopwatch ≤ 3 s / ≤ 2 taps; 5 min locked with no lost speech) and record it in `validation.md`
+  **Status (2026-11-19)**: `launch_action.dart` plus the in-progress marker (OS-kill dating) are built and tested; the V5 stopwatch run on the iPhone is still open.
 
 ---
 
@@ -307,10 +310,10 @@
 - [X] T088 [P] Write session stats tests in `app/test/session_stats_test.dart`: after a fake session with known caption text, the written JSONL line contains none of that text and no key; latency fields match `latency.dart` on the fixture; delete-one and delete-all work. **Verify:** passes
 - [X] T089 [P] Implement battery-low detection in `app/lib/session/battery_watch.dart`: uses `battery_plus`, measures the drain rate, and applies the thresholds from `pipeline.yaml` (R-18). Add `app/test/battery_watch_test.dart`. **Verify:** the test passes for both the minutes-left trigger and the percent trigger
 - [X] T090 Implement `StatsStore` + the recorder in `app/lib/session/session_stats.dart` per `contracts/session-stats.md` (latency, battery, locked time, switches, interruptions, errors, billed seconds, end reason), and the stats screen `app/lib/ui/stats_screen.dart` with delete (FR-023). **Verify:** T088 passes
-- [ ] T091 [P] Implement status banners (`fallback`, `paused_offline`, `paused_mic`, OS-kill notice, battery low, cost cap) in `app/lib/ui/status_banner.dart`, mounted in `caption_screen.dart` so they don't cover the newest line (FR-021). **Verify:** a widget test shows the right banner per state, and the newest line stays visible
-- [ ] T092 [P] Write export tests in `app/test/transcript_export_test.dart`: the format matches `contracts/export-format.md`; no provisional text; `[unrecognized]`; stats only when `test_mode` is on; the temp file is deleted even when sharing fails. **Verify:** passes
-- [ ] T093 Implement export in `app/lib/export/transcript_export.dart` (temp file → `share_plus` → delete, with a single owner) and add the test-mode switch in `app/lib/ui/settings_screen.dart` (FR-019, FR-025). **Verify:** T092 passes
-- [ ] T094 Write privacy tests in `app/test/privacy_test.dart`:
+- [X] T091 [P] Implement status banners (`fallback`, `paused_offline`, `paused_mic`, OS-kill notice, battery low, cost cap) in `app/lib/ui/status_banner.dart`, mounted in `caption_screen.dart` so they don't cover the newest line (FR-021). **Verify:** a widget test shows the right banner per state, and the newest line stays visible
+- [X] T092 [P] Write export tests in `app/test/transcript_export_test.dart`: the format matches `contracts/export-format.md`; no provisional text; `[unrecognized]`; stats only when `test_mode` is on; the temp file is deleted even when sharing fails. **Verify:** passes
+- [X] T093 Implement export in `app/lib/export/transcript_export.dart` (temp file → `share_plus` → delete, with a single owner) and add the test-mode switch in `app/lib/ui/settings_screen.dart` (FR-019, FR-025). **Verify:** T092 passes
+- [X] T094 Write privacy tests in `app/test/privacy_test.dart`:
   - after a fake session plus export, the app documents directory contains only `stats.jsonl` (FR-018)
   - log records captured during the session contain no caption text and no key (XII, XIII)
 
@@ -324,7 +327,7 @@
 **Goal**: an Android build with a single-button, extra-large simple mode. **Independent Test**: SC-009.
 
 - [ ] T096 [P] [US6] Implement Android capture in `app/android/app/src/main/kotlin/dev/itai/itatranscript/AudioCapturePlugin.kt`: `AudioRecord` with `VOICE_COMMUNICATION` and `NoiseSuppressor`, a foreground service for locked capture, and the same `itatranscript/audio` contract. Put the framing in a pure `PcmFramer.kt` with a JVM unit test (`app/android/app/src/test/.../PcmFramerTest.kt`) that mirrors T051's cases (IV). **Verify:** `./gradlew test` and `flutter test` pass, and a live session runs on the Android phone with the screen locked for 5 min
-- [ ] T097 [P] [US6] Implement simple mode in `app/lib/ui/simple_mode_screen.dart`: one start/stop button, extra-large text, settings behind a long-press (FR-012). **Verify:** a widget test finds exactly one button and no settings entry
+- [X] T097 [P] [US6] Implement simple mode in `app/lib/ui/simple_mode_screen.dart`: one start/stop button, extra-large text, settings behind a long-press (FR-012). **Verify:** a widget test finds exactly one button and no settings entry
 - [ ] T098 [US6] Add the Android on-device fallback adapter in `app/lib/engines/android_speech_adapter.dart`, then validate quickstart V2 and V6 on Android. **Verify:** results recorded in `validation.md`
 - [ ] T099 [US6] Run the grandma test (SC-009). **Verify:** recorded in `validation.md`
 

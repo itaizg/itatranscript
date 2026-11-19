@@ -371,6 +371,63 @@ class StatsStore {
     );
   }
 
+  File get _marker => File('${file.path}.inprogress');
+
+  /// Notes that a session is running. [lastSeen] is refreshed by heartbeats.
+  Future<void> markInProgress({
+    required DateTime startedAt,
+    required DateTime lastSeen,
+  }) async {
+    await file.parent.create(recursive: true);
+    await _marker.writeAsString(
+      jsonEncode(<String, Object?>{
+        'started_at': startedAt.toUtc().toIso8601String(),
+        'last_seen': lastSeen.toUtc().toIso8601String(),
+      }),
+      flush: true,
+    );
+  }
+
+  /// Removes the in-progress marker after a clean end.
+  Future<void> clearInProgress() async {
+    if (_marker.existsSync()) {
+      await _marker.delete();
+    }
+  }
+
+  /// If the last session never ended cleanly (the OS killed the app), records it as
+  /// `os_killed` and returns its stats line; otherwise returns null.
+  Future<Map<String, Object?>?> recoverOrphan() async {
+    if (!_marker.existsSync()) {
+      return null;
+    }
+    try {
+      final Map<String, Object?> m = (jsonDecode(
+        await _marker.readAsString(),
+      ) as Map<Object?, Object?>).cast<String, Object?>();
+      final DateTime started = DateTime.parse(m['started_at']! as String);
+      final DateTime seen = DateTime.parse(m['last_seen']! as String);
+      final Map<String, Object?> record = <String, Object?>{
+        'v': 1,
+        'session_id': StatsRecorder.newId(),
+        'started_at': started.toUtc().toIso8601String(),
+        'duration_s': seen.difference(started).inSeconds,
+        'end_reason': EndReason.osKilled.wire,
+      };
+      await file.parent.create(recursive: true);
+      await file.writeAsString(
+        '${jsonEncode(record)}\n',
+        mode: FileMode.append,
+        flush: true,
+      );
+      return record;
+    } on Object {
+      return null;
+    } finally {
+      await clearInProgress();
+    }
+  }
+
   /// Deletes every record.
   Future<void> deleteAll() async {
     if (file.existsSync()) {

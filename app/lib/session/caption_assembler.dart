@@ -87,13 +87,18 @@ class CaptionAssembler {
     return true;
   }
 
+  /// Drops every provisional segment (an engine switch makes open text stale).
+  void dropAllProvisional() => _drop((String id) => true);
+
   /// Drops provisional segments of [namespace] (an engine was lost; its open text is stale).
-  void dropProvisional(String namespace) {
+  void dropProvisional(String namespace) =>
+      _drop((String id) => id.startsWith('$namespace:'));
+
+  void _drop(bool Function(String id) matches) {
     final List<String> stale = _order
         .where(
           (String id) =>
-              id.startsWith('$namespace:') &&
-              _byId[id]!.status == SegmentStatus.provisional,
+              matches(id) && _byId[id]!.status == SegmentStatus.provisional,
         )
         .toList();
     for (final String id in stale) {

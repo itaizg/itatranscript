@@ -1,82 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:itatranscript/core/clock.dart';
-import 'package:itatranscript/engines/engine_adapter.dart';
-import 'package:itatranscript/engines/profiles.dart';
-import 'package:itatranscript/gate/speech_gate.dart';
 import 'package:itatranscript/models/caption_segment.dart';
 import 'package:itatranscript/models/engine_event.dart';
-import 'package:itatranscript/models/engine_profile.dart';
-import 'package:itatranscript/models/pipeline_config.dart';
 import 'package:itatranscript/models/session_snapshot.dart';
-import 'package:itatranscript/models/settings.dart';
 import 'package:itatranscript/session/session_controller.dart';
-import 'package:itatranscript/session/settings_store.dart';
+import 'package:itatranscript/session/battery_watch.dart';
+import 'package:itatranscript/session/cost_meter.dart';
+import 'package:itatranscript/session/session_stats.dart';
+
+import 'dart:io';
+import 'dart:convert';
 
 import 'fakes.dart';
-import 'support.dart';
-
-class Rig {
-  Rig({String engine = 'fake'}) {
-    profiles = parseEngines(readShared('engines.yaml'));
-    config = parsePipeline(
-      readShared('pipeline.yaml'),
-      readSharedBytes('models/silero_vad.onnx'),
-    );
-    store = SettingsStore(
-      preferences: MemoryKeyValueStore(),
-      secrets: MemorySecretStore(),
-      defaults: Settings.defaults(activeEngineId: engine),
-    );
-    registry = AdapterRegistry(<String, AdapterFactory>{
-      'fake': (EngineProfile p, Clock c) => _build('fake'),
-      'apple_speech': (EngineProfile p, Clock c) => _build('apple_speech'),
-    });
-    controller = SessionController(
-      audio: audio,
-      gateFactory: () => SpeechGate(model, config.vad),
-      settings: store,
-      profiles: profiles,
-      registry: registry,
-      clock: FakeClock(),
-    );
-    controller.snapshot.addListener(
-      () => states.add(controller.snapshot.value.state),
-    );
-  }
-
-  late final Map<String, EngineProfile> profiles;
-  late final PipelineConfig config;
-  late final SettingsStore store;
-  late final AdapterRegistry registry;
-  late final SessionController controller;
-  final FakeAudioSource audio = FakeAudioSource();
-  final SwitchableModel model = SwitchableModel();
-  final List<ScriptedEngine> engines = <ScriptedEngine>[];
-  final List<String> built = <String>[];
-  final List<SessionState> states = <SessionState>[];
-
-  EngineAdapter _build(String key) {
-    built.add(key);
-    final ScriptedEngine e = ScriptedEngine();
-    engines.add(e);
-    return e;
-  }
-
-  /// 600 ms of "speech": enough for the gate to open and pass frames.
-  Future<void> speak() async {
-    model.level = 0.9;
-    audio.emitFrames(30);
-    await pumpEventQueue();
-  }
-
-  /// 600 ms of silence: the gate closes the utterance.
-  Future<void> hush() async {
-    model.level = 0.0;
-    audio.emitFrames(30);
-    await pumpEventQueue();
-  }
-}
+import 'rig.dart';
 
 void main() {
   test('idle → starting → live → ended', () async {
@@ -287,4 +223,134 @@ void main() {
     );
     expect(r.controller.snapshot, isA<ValueListenable<SessionSnapshot>>());
   });
+
+  test('a microphone interruption pauses with a reason and resumes afterwards (FR-022)', () async {
+    final Rig r = Rig();
+    await r.controller.start();
+    await r.speak();
+    r.audio.interrupt(paused: true, reason: 'phone call');
+    await pumpEventQueue();
+    expect(r.controller.snapshot.value.state, SessionState.pausedMic);
+    expect(r.controller.snapshot.value.pauseReason, 'phone call');
+    r.audio.interrupt(paused: false);
+    await pumpEventQueue();
+    expect(r.controller.snapshot.value.state, SessionState.live);
+    expect(r.controller.snapshot.value.pauseReason, isNull);
+  });
+
+  test('a lost cloud engine moves to the fallback state and drops stale provisional text', () async {
+    final Rig r = Rig(engine: 'google-stt-he', fallback: 'apple-ondevice');
+    await r.controller.start();
+    await r.speak();
+    r.engines.first
+      ..emit(
+        const FinalEvent(
+          tMs: 1,
+          segmentId: 's1',
+          text: 'kept',
+          lang: 'en',
+          startMs: 0,
+          endMs: 400,
+        ),
+      )
+      ..emit(
+        const PartialEvent(
+          tMs: 2,
+          segmentId: 's2',
+          text: 'stale',
+          lang: 'en',
+          startMs: 500,
+        ),
+      )
+      ..emit(const HealthEvent(tMs: 3, state: 'lost', reason: 'socket'));
+    await pumpEventQueue();
+    final SessionSnapshot s = r.controller.snapshot.value;
+    expect(s.state, SessionState.fallback);
+    expect(s.segments.map((CaptionSegment x) => x.text), <String>['kept']);
+    expect(r.engines, hasLength(2));
+  });
+
+  test('with no fallback, a lost cloud engine shows paused_offline', () async {
+    final Rig r = Rig(engine: 'google-stt-he');
+    await r.controller.start();
+    await r.speak();
+    r.engines.first.emit(
+      const HealthEvent(tMs: 3, state: 'lost', reason: 'socket'),
+    );
+    await pumpEventQueue();
+    expect(r.controller.snapshot.value.state, SessionState.pausedOffline);
+  });
+
+  test('stopping writes one stats line with no caption text', () async {
+    final Directory dir = Directory.systemTemp.createTempSync('session_stats');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final StatsStore stats = StatsStore(File('${dir.path}/stats.jsonl'));
+    final Rig r = Rig(
+      extras: SessionExtras(stats: stats, pipelineSha256: 'abc'),
+    );
+    await r.controller.start();
+    await r.speak();
+    r.engines.single.emit(
+      const FinalEvent(
+        tMs: 1,
+        segmentId: 's1',
+        text: 'PRIVATE WORDS',
+        lang: 'en',
+        startMs: 0,
+        endMs: 5,
+      ),
+    );
+    await pumpEventQueue();
+    await r.controller.stop();
+    final String written = File('${dir.path}/stats.jsonl').readAsStringSync();
+    expect(const LineSplitter().convert(written), hasLength(1));
+    expect(written, isNot(contains('PRIVATE WORDS')));
+    expect(jsonDecode(written)['end_reason'], 'user_stop');
+  });
+
+  test(
+    'billed audio feeds the cost meter and surfaces the warning level',
+    () async {
+      final CostMeter meter = CostMeter(
+        capUsd: 1,
+        store: MemoryKeyValueStore(),
+      );
+      final Rig r = Rig(
+        engine: 'google-stt-he',
+        extras: SessionExtras(
+          costMeter: meter,
+          wallClock: () => DateTime(2026, 11, 1),
+        ),
+      );
+      await r.controller.start();
+      await r.speak();
+      r.engines.single.emit(const UsageEvent(tMs: 1, audioSecondsBilled: 3600));
+      await pumpEventQueue();
+      expect(
+        meter.spentUsd(DateTime(2026, 11, 1)),
+        r.profiles['google-stt-he']!.costUsdPerHour,
+      );
+    },
+  );
+
+  test('a low battery shows a banner flag with minutes left', () async {
+    final _FakeBattery battery = _FakeBattery(
+      const BatteryReading(percent: 50, charging: false),
+    );
+    final Rig r = Rig(extras: SessionExtras(battery: battery));
+    await r.controller.start();
+    await r.controller.checkBattery();
+    expect(r.controller.snapshot.value.batteryLow, isFalse);
+    battery.reading = const BatteryReading(percent: 8, charging: false);
+    await r.controller.checkBattery();
+    expect(r.controller.snapshot.value.batteryLow, isTrue);
+  });
+}
+
+class _FakeBattery implements BatteryReader {
+  _FakeBattery(this.reading);
+  BatteryReading reading;
+
+  @override
+  Future<BatteryReading> read() async => reading;
 }

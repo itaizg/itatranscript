@@ -11,15 +11,51 @@ import '../models/audio_frame.dart';
 import '../models/caption_segment.dart';
 import '../models/engine_event.dart';
 import '../models/engine_profile.dart';
+import '../models/pipeline_config.dart';
 import '../models/session_snapshot.dart';
 import '../models/settings.dart';
+import 'battery_watch.dart';
 import 'caption_assembler.dart';
+import 'cost_meter.dart';
+import 'fallback_controller.dart';
+import 'session_stats.dart';
 import 'settings_store.dart';
 
 /// Builds a fresh [SpeechGate] for each session.
 typedef GateFactory = SpeechGate Function();
 
-/// Owns one captioning session: AudioSource → SpeechGate → adapter → assembler.
+/// Optional collaborators; each one switches on a feature (stats, cost cap, battery, network).
+class SessionExtras {
+  /// Creates the optional collaborators.
+  const SessionExtras({
+    this.stats,
+    this.costMeter,
+    this.battery,
+    this.connectivity,
+    this.pipelineSha256 = '',
+    this.wallClock = DateTime.now,
+  });
+
+  /// Where finished sessions' stats are appended.
+  final StatsStore? stats;
+
+  /// Monthly spending tracker.
+  final CostMeter? costMeter;
+
+  /// Battery source.
+  final BatteryReader? battery;
+
+  /// `true` when the network is reachable.
+  final Stream<bool>? connectivity;
+
+  /// Hash of `pipeline.yaml`, recorded in the stats.
+  final String pipelineSha256;
+
+  /// Wall-clock source for stats and cost months.
+  final DateTime Function() wallClock;
+}
+
+/// Owns one captioning session: AudioSource → SpeechGate → engine (with fallback) → assembler.
 ///
 /// The UI only sees immutable [SessionSnapshot]s. This class holds the single per-session
 /// failure isolation point, [_guard].
@@ -32,6 +68,8 @@ class SessionController {
     required this._profiles,
     required this._registry,
     required this._clock,
+    required this._config,
+    this.extras = const SessionExtras(),
   }) : snapshot = ValueNotifier<SessionSnapshot>(
          SessionSnapshot.idle(LanguageMode.auto),
        );
@@ -41,35 +79,54 @@ class SessionController {
   /// The current immutable snapshot; listen to it to redraw.
   final ValueNotifier<SessionSnapshot> snapshot;
 
+  /// Optional features.
+  final SessionExtras extras;
+
   final AudioSource _audio;
   final GateFactory _gateFactory;
   final SettingsStore _settings;
   final Map<String, EngineProfile> _profiles;
   final AdapterRegistry _registry;
   final Clock _clock;
+  final PipelineConfig _config;
 
   final CaptionAssembler _assembler = CaptionAssembler();
   SpeechGate? _gate;
-  EngineAdapter? _adapter;
-  EngineProfile? _profile;
-  StreamSubscription<EngineEvent>? _eventSub;
-  StreamSubscription<AudioFrame>? _frameSub;
-  StreamSubscription<AudioInterruption>? _interruptSub;
+  FallbackController? _engine;
+  EngineProfile? _active;
+  StatsRecorder? _recorder;
+  BatteryWatch? _batteryWatch;
+  final List<StreamSubscription<Object?>> _subs =
+      <StreamSubscription<Object?>>[];
   LanguageMode _mode = LanguageMode.auto;
   LanguageMode? _pendingMode;
-  int _generation = 0;
-  bool _switching = false;
+  int _startedAtMs = 0;
+  bool _ended = false;
+  bool _batteryLow = false;
+  int? _batteryMinutes;
+  String _costLevel = 'ok';
+  String? _pauseReason;
+  String? _error;
+  SessionState _state = SessionState.idle;
 
   /// Segments so far; unmodifiable.
   List<CaptionSegment> get segments => _assembler.segments;
 
+  int get _sinceStartMs => _clock.nowMs() - _startedAtMs;
+
   void _emit(SessionState state, {String? error, String? pauseReason}) {
+    _state = state;
+    _error = error ?? _error;
+    _pauseReason = pauseReason;
     snapshot.value = SessionSnapshot(
       state: state,
       languageMode: _mode,
       segments: _assembler.segments,
-      errorMessage: error,
-      pauseReason: pauseReason,
+      errorMessage: _error,
+      pauseReason: _pauseReason,
+      batteryLow: _batteryLow,
+      batteryMinutesLeft: _batteryMinutes,
+      costLevel: _costLevel,
     );
   }
 
@@ -78,12 +135,11 @@ class SessionController {
     try {
       await work();
     } on Object catch (error, stack) {
-      // the one catch-all at the session boundary
+      // The one catch-all at the session boundary.
       _log.severe('session failed: ${error.runtimeType}', error, stack);
-      await _teardown();
-      _assembler.dropProvisional('g$_generation');
-      _emit(
-        SessionState.ended,
+      _assembler.dropAllProvisional();
+      await _end(
+        EndReason.error,
         error: 'Captions stopped: ${error.runtimeType}',
       );
     }
@@ -93,130 +149,275 @@ class SessionController {
   Future<void> start() => _guard(() async {
     final Settings s = await _settings.load();
     _mode = s.languageMode;
+    _ended = false;
+    _error = null;
+    _startedAtMs = _clock.nowMs();
     _emit(SessionState.starting);
-    final EngineProfile profile =
+    final EngineProfile active =
         _profiles[s.activeEngineId] ??
         (throw StateError('unknown engine ${s.activeEngineId}'));
-    _profile = profile;
-    _gate = _gateFactory();
-    await _openAdapter(profile);
-    _frameSub = _audio.frames.listen(
-      (AudioFrame f) => unawaited(_guard(() => _onFrame(f))),
-      onError: (Object e) =>
-          unawaited(_guard(() async => throw FormatException('audio: $e'))),
+    _active = active;
+    final EngineProfile? fallback = s.fallbackEngineId == null
+        ? null
+        : _profiles[s.fallbackEngineId];
+    final int? batteryStart = await _readBatteryPercent();
+    _recorder = StatsRecorder(
+      startedAt: extras.wallClock(),
+      languageMode: _mode.name,
+      activeEngineId: active.id,
+      fallbackEngineId: fallback?.id,
+      pipelineSha256: extras.pipelineSha256,
+      usdPerHour: active.costUsdPerHour,
+      batteryStartPct: batteryStart,
     );
-    _interruptSub = _audio.interruptions.listen(_onInterruption);
+    _batteryWatch = BatteryWatch(_config);
+    await extras.stats?.markInProgress(
+      startedAt: extras.wallClock(),
+      lastSeen: extras.wallClock(),
+    );
+    _gate = _gateFactory();
+    final FallbackController engine = FallbackController(
+      registry: _registry,
+      clock: _clock,
+      config: _config,
+      active: active,
+      fallback: fallback,
+    );
+    _engine = engine;
+    _subs
+      ..add(engine.events.listen(_onTagged))
+      ..add(
+        engine.status.listen(
+          (EngineStatus st) => unawaited(_guard(() async => _onStatus(st))),
+        ),
+      );
+    final String? key = await _settings.apiKey(active.id);
+    await engine.open(_mode, <String, String>{'api_key': ?key});
+    _subs
+      ..add(
+        _audio.frames.listen(
+          (AudioFrame f) => unawaited(_guard(() => _onFrame(f))),
+          onError: (Object e) =>
+              unawaited(_guard(() async => throw FormatException('audio: $e'))),
+        ),
+      )
+      ..add(_audio.interruptions.listen(_onInterruption));
+    final Stream<bool>? net = extras.connectivity;
+    if (net != null) {
+      _subs.add(
+        net.listen(
+          (bool online) =>
+              unawaited(_guard(() => engine.setOnline(online: online))),
+        ),
+      );
+    }
     await _audio.start();
   });
 
-  Future<void> _openAdapter(EngineProfile profile) async {
-    final EngineAdapter adapter = _registry.create(profile, _clock);
-    _adapter = adapter;
-    _generation++;
-    final String ns = 'g$_generation';
-    _eventSub = adapter.events.listen(
-      (EngineEvent e) => _onEvent(e, ns),
-      onError: (Object e) =>
-          unawaited(_guard(() async => throw StateError('engine stream: $e'))),
-    );
-    final String? key = await _settings.apiKey(profile.id);
-    await adapter.open(profile, _mode, <String, String>{'api_key': ?key});
+  Future<int?> _readBatteryPercent() async {
+    final BatteryReader? reader = extras.battery;
+    return reader == null ? null : (await reader.read()).percent;
   }
 
   Future<void> _onFrame(AudioFrame frame) async {
     final SpeechGate? gate = _gate;
-    final EngineAdapter? adapter = _adapter;
-    if (gate == null || adapter == null || _switching) {
+    final FallbackController? engine = _engine;
+    if (gate == null || engine == null || _ended) {
       return;
     }
     final bool wasInSpeech = gate.inSpeech;
     for (final AudioFrame f in gate.push(frame)) {
-      await adapter.pushAudio(f);
-      if (snapshot.value.state == SessionState.starting) {
+      await engine.pushAudio(f);
+      if (_state == SessionState.starting) {
         _emit(SessionState.live);
       }
     }
+    await engine.setSpeaking(speaking: gate.inSpeech);
     if (wasInSpeech && !gate.inSpeech && _pendingMode != null) {
-      await _applyPendingMode();
+      final LanguageMode mode = _pendingMode!;
+      _pendingMode = null;
+      _mode = mode;
+      await engine.reopen(mode);
+      _emit(_state);
     }
   }
 
-  void _onEvent(EngineEvent event, String namespace) {
+  void _onTagged(TaggedEvent tagged) {
+    final EngineEvent event = tagged.event;
+    _recorder?.onEvent(event, _sinceStartMs);
     if (event is ErrorEvent && !event.retryable) {
       unawaited(
         _guard(() async => throw StateError('engine error: ${event.code}')),
       );
       return;
     }
-    if (event is ClosedEvent && snapshot.value.state == SessionState.live) {
-      unawaited(
-        _guard(() async => throw StateError('engine closed unexpectedly')),
-      );
-      return;
+    if (event is UsageEvent) {
+      unawaited(_guard(() => _onUsage(event)));
     }
-    if (_assembler.apply(event, namespace: namespace)) {
-      _emit(snapshot.value.state);
+    if (_assembler.apply(
+      event,
+      namespace: tagged.namespace,
+      role: tagged.role,
+    )) {
+      _emit(_state);
     }
   }
 
-  void _onInterruption(AudioInterruption i) {
-    if (snapshot.value.state == SessionState.ended) {
+  Future<void> _onUsage(UsageEvent event) async {
+    final CostMeter? meter = extras.costMeter;
+    final EngineProfile? profile = _active;
+    if (meter == null || profile == null) {
       return;
     }
-    _emit(
-      i.paused ? SessionState.pausedMic : SessionState.live,
-      pauseReason: i.paused ? i.reason : null,
+    final CostLevel level = await meter.add(
+      audioSeconds: event.audioSecondsBilled,
+      usdPerHour: profile.costUsdPerHour,
+      now: extras.wallClock(),
     );
+    if (level != CostLevel.ok) {
+      _costLevel = level.name;
+      _emit(_state);
+    }
+  }
+
+  Future<void> _onStatus(EngineStatus status) async {
+    final FallbackController? engine = _engine;
+    switch (status) {
+      case EngineStatus.active:
+        _emit(SessionState.live);
+      case EngineStatus.fallback:
+        _assembler.dropAllProvisional();
+        _recordSwitch(engine);
+        _emit(SessionState.fallback);
+      case EngineStatus.pausedOffline:
+        _assembler.dropAllProvisional();
+        _emit(SessionState.pausedOffline, pauseReason: 'no connection');
+      case EngineStatus.failed:
+        throw StateError('engine failed');
+    }
+  }
+
+  int _recordedSwitches = 0;
+
+  void _recordSwitch(FallbackController? engine) {
+    final List<SwitchRecord> all = engine?.switches ?? const <SwitchRecord>[];
+    for (final SwitchRecord r in all.skip(_recordedSwitches)) {
+      _recorder?.onSwitch(
+        atMs: r.atMs,
+        toFallback: r.toFallback,
+        switchMs: r.switchMs,
+      );
+    }
+    _recordedSwitches = all.length;
+  }
+
+  void _onInterruption(AudioInterruption i) {
+    if (_ended) {
+      return;
+    }
+    if (i.paused) {
+      _recorder?.onInterruptionStart(_sinceStartMs);
+      _emit(SessionState.pausedMic, pauseReason: i.reason);
+    } else {
+      _recorder?.onInterruptionEnd(_sinceStartMs);
+      final FallbackController? engine = _engine;
+      _emit(
+        engine?.state == EngineStatus.fallback
+            ? SessionState.fallback
+            : SessionState.live,
+      );
+    }
   }
 
   /// Changes the language mode; it applies at the next VAD pause (research R-14).
   void setLanguageMode(LanguageMode mode) {
-    if (snapshot.value.state == SessionState.idle ||
-        snapshot.value.state == SessionState.ended) {
+    if (_state == SessionState.idle || _state == SessionState.ended) {
       _mode = mode;
-      _emit(snapshot.value.state);
+      _emit(_state);
       return;
     }
     _pendingMode = mode;
   }
 
-  Future<void> _applyPendingMode() async {
-    final LanguageMode? mode = _pendingMode;
-    final EngineProfile? profile = _profile;
-    final EngineAdapter? old = _adapter;
-    if (mode == null || profile == null || old == null) {
+  /// Records that the session is still alive (so an OS kill can be dated); about once a minute.
+  Future<void> heartbeat() async {
+    final StatsRecorder? recorder = _recorder;
+    if (recorder != null && !_ended) {
+      await extras.stats?.markInProgress(
+        startedAt: recorder.startedAt,
+        lastSeen: extras.wallClock(),
+      );
+    }
+  }
+
+  /// Samples the battery; call about once a minute while a session runs.
+  Future<void> checkBattery() async {
+    await heartbeat();
+    final BatteryReader? reader = extras.battery;
+    final BatteryWatch? watch = _batteryWatch;
+    if (reader == null || watch == null || _ended) {
       return;
     }
-    _switching = true;
-    _pendingMode = null;
-    await old.finish();
-    await _eventSub?.cancel();
-    _mode = mode;
-    await _openAdapter(profile);
-    _switching = false;
-    _emit(snapshot.value.state);
+    final BatteryWarning? warning = watch.sample(
+      await reader.read(),
+      _sinceStartMs,
+    );
+    final bool low = warning != null;
+    if (low != _batteryLow || warning?.minutesLeft != _batteryMinutes) {
+      if (low && !_batteryLow) {
+        _recorder?.batteryWarnings++;
+      }
+      _batteryLow = low;
+      _batteryMinutes = warning?.minutesLeft;
+      _emit(_state);
+    }
   }
 
   /// Stops the session; the transcript stays until the next start.
   Future<void> stop() => _guard(() async {
-    final EngineAdapter? adapter = _adapter;
     await _audio.stop();
-    await adapter?.finish();
-    await _teardown();
-    _emit(SessionState.ended);
+    await _engine?.finish();
+    await _end(EndReason.userStop);
   });
 
-  Future<void> _teardown() async {
-    await _frameSub?.cancel();
-    await _interruptSub?.cancel();
-    await _eventSub?.cancel();
-    _frameSub = _interruptSub = null;
-    _eventSub = null;
-    final EngineAdapter? adapter = _adapter;
-    _adapter = null;
-    if (adapter != null) {
-      await adapter.cancel();
+  Future<void> _end(EndReason reason, {String? error}) async {
+    if (_ended) {
+      return;
     }
+    _ended = true;
+    _recorder?.setSpans(_gate?.spans ?? const <SpeechSpan>[]);
+    _recordSwitch(_engine);
+    for (final StreamSubscription<Object?> sub in _subs) {
+      await sub.cancel();
+    }
+    _subs.clear();
+    await _engine?.cancel();
+    _engine = null;
     _gate = null;
+    await _writeStats(reason);
+    await extras.stats?.clearInProgress();
+    _emit(SessionState.ended, error: error);
+  }
+
+  Future<void> _writeStats(EndReason reason) async {
+    final StatsRecorder? recorder = _recorder;
+    final StatsStore? store = extras.stats;
+    if (recorder == null || store == null) {
+      return;
+    }
+    recorder.batteryEndPct = await _readBatteryPercent();
+    try {
+      await store.append(
+        recorder.finish(
+          sessionMs: _sinceStartMs,
+          reason: reason,
+          sessionId: StatsRecorder.newId(),
+        ),
+      );
+    } on Object catch (error) {
+      // Stats are best-effort; failing to write them must not hide the caption error.
+      _log.warning('could not write session stats: ${error.runtimeType}');
+    }
+    _recorder = null;
   }
 }

@@ -46,6 +46,9 @@ final class SessionSnapshot with JsonValue {
     required List<CaptionSegment> segments,
     this.errorMessage,
     this.pauseReason,
+    this.batteryLow = false,
+    this.batteryMinutesLeft,
+    this.costLevel = 'ok',
   }) : segments = List<CaptionSegment>.unmodifiable(segments);
 
   /// The state before anything starts.
@@ -70,6 +73,15 @@ final class SessionSnapshot with JsonValue {
   /// Why the session is paused, if it is.
   final String? pauseReason;
 
+  /// The battery-low warning is showing.
+  final bool batteryLow;
+
+  /// Estimated minutes of battery left, if known.
+  final int? batteryMinutesLeft;
+
+  /// `ok`, `warn90` or `capReached` (see CostLevel).
+  final String costLevel;
+
   /// Copy with some fields replaced.
   SessionSnapshot copyWith({
     SessionState? state,
@@ -77,12 +89,18 @@ final class SessionSnapshot with JsonValue {
     List<CaptionSegment>? segments,
     String? errorMessage,
     String? pauseReason,
+    bool? batteryLow,
+    int? batteryMinutesLeft,
+    String? costLevel,
   }) => SessionSnapshot(
     state: state ?? this.state,
     languageMode: languageMode ?? this.languageMode,
     segments: segments ?? this.segments,
     errorMessage: errorMessage ?? this.errorMessage,
     pauseReason: pauseReason ?? this.pauseReason,
+    batteryLow: batteryLow ?? this.batteryLow,
+    batteryMinutesLeft: batteryMinutesLeft ?? this.batteryMinutesLeft,
+    costLevel: costLevel ?? this.costLevel,
   );
 
   @override
@@ -92,5 +110,8 @@ final class SessionSnapshot with JsonValue {
     'segments': segments.map((CaptionSegment s) => s.toJson()).toList(),
     'error_message': ?errorMessage,
     'pause_reason': ?pauseReason,
+    'battery_low': batteryLow,
+    'battery_minutes_left': ?batteryMinutesLeft,
+    'cost_level': costLevel,
   };
 }
