@@ -226,3 +226,11 @@ __marimo__/
 bench/data/
 bench/results/
 bench/.env
+
+# Native toolchains
+.build/
+.swiftpm/
+DerivedData/
+.gradle/
+**/local.properties
+.dart_tool/

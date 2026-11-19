@@ -11,13 +11,18 @@ TOOL_DIR = REPO_ROOT / "bench" / "tools" / "apple-speech"
 
 
 def apply(samples: np.ndarray) -> np.ndarray:
-    """Pipe PCM through ``apple-speech voiceproc``; the output has the same length."""
+    """Play and re-record PCM through Apple voice processing (needs speakers and a mic).
+
+    The offline-rendering mode is rejected by the OS (CoreAudio -80800), so this uses the
+    helper's loopback mode, which plays the audio out loud. The output is trimmed or
+    padded to the input length.
+    """
     exe = TOOL_DIR / ".build" / "release" / "apple-speech"
     if not exe.exists():
         msg = f"build the helper first: swift build -c release --package-path {TOOL_DIR}"
         raise CleanupUnavailableError(msg)
     result = subprocess.run(  # noqa: S603
-        [str(exe), "voiceproc"],
+        [str(exe), "voiceproc", "--loopback"],
         input=samples.astype(np.int16).tobytes(),
         capture_output=True,
         check=True,

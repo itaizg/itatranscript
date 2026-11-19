@@ -85,7 +85,16 @@ async def run_item(  # noqa: PLR0913
     gate = SpeechGate(config, model_path, enabled=vad == "on")
     frames, spans, end_ms = gate_frames(cleaned.astype(np.int16).tobytes(), gate)
     engine = factory(profile, clock)
-    events = await stream_timed(engine, profile, frames, clock, end_ms=end_ms, secrets=secrets)
+    language_mode = "auto" if clip.lang == "mixed" else clip.lang
+    events = await stream_timed(
+        engine,
+        profile,
+        frames,
+        clock,
+        end_ms=end_ms,
+        language_mode=language_mode,
+        secrets=secrets,
+    )
     store.write(
         profile.id,
         cleanup,
