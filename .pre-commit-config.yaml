@@ -20,7 +20,7 @@ repos:
         files: ^app/.*\.dart$
       - id: dart-analyze
         name: dart analyze
-        entry: dart analyze
+        entry: dart analyze --fatal-infos app
         language: system
         pass_filenames: false
         files: ^app/.*\.dart$
@@ -29,6 +29,7 @@ repos:
         entry: swift format lint --strict
         language: system
         files: \.swift$
+        exclude: (GeneratedPluginRegistrant\.swift$|/ephemeral/)
       - id: ktlint
         name: ktlint
         entry: ktlint

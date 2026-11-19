@@ -1,0 +1,22 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - macos/**
+
+linter:
+  rules:
+    avoid_catches_without_on_clauses: true
+    prefer_final_locals: true
+    prefer_const_constructors: true
+    avoid_print: true
+    always_declare_return_types: true
+    type_annotate_public_apis: true
+    public_member_api_docs: true
