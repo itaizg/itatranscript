@@ -59,6 +59,9 @@ jobs:
           flutter-version: 3.50.0
           channel: stable
       - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
+        run: flutter pub get
+        working-directory: app
+      - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
         run: flutter build ios --config-only --no-codesign && pod install --project-directory=ios
         working-directory: app
       - if: hashFiles('app/ios/Runner.xcworkspace/contents.xcworkspacedata') != ''
