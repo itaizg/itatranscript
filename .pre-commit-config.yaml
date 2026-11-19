@@ -24,3 +24,13 @@ repos:
         language: system
         pass_filenames: false
         files: ^app/.*\.dart$
+      - id: swift-format
+        name: swift format lint
+        entry: swift format lint --strict
+        language: system
+        files: \.swift$
+      - id: ktlint
+        name: ktlint
+        entry: ktlint
+        language: system
+        files: \.kts?$
