@@ -1,4 +1,4 @@
-# Placeholder values until vendor-check.md (task T011) exists. No secrets here.
+# Vendor facts from vendor-check.md (2026-11-19). Azure cost_usd_per_hour is still a placeholder (price not stated). No secrets here.
 version: 1
 engines:
   - id: fake
@@ -16,7 +16,7 @@ engines:
       trains_on_audio: false
       opt_out_required: false
       terms_source: vendor-check.md#fake
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: apple-ondevice
     display_name: Apple on-device
@@ -33,7 +33,7 @@ engines:
       trains_on_audio: false
       opt_out_required: false
       terms_source: vendor-check.md#apple-ondevice
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: android-ondevice
     display_name: Android on-device
@@ -50,7 +50,7 @@ engines:
       trains_on_audio: false
       opt_out_required: false
       terms_source: vendor-check.md#android-ondevice
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: agora-rtstt
     display_name: Agora RT-STT
@@ -61,13 +61,13 @@ engines:
     supports_code_switching: false
     supports_speaker_changes: false
     can_be_fallback: false
-    cost_usd_per_hour: 1.0
+    cost_usd_per_hour: 1.02
     privacy:
       retains_audio: false
       trains_on_audio: false
       opt_out_required: true
       terms_source: vendor-check.md#agora-rtstt
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: google-stt-he
     display_name: Google STT
@@ -78,13 +78,13 @@ engines:
     supports_code_switching: false
     supports_speaker_changes: false
     can_be_fallback: false
-    cost_usd_per_hour: 1.44
+    cost_usd_per_hour: 0.96
     privacy:
       retains_audio: false
       trains_on_audio: false
       opt_out_required: true
       terms_source: vendor-check.md#google-stt-he
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: azure-speech-he
     display_name: Azure Speech
@@ -101,7 +101,7 @@ engines:
       trains_on_audio: false
       opt_out_required: true
       terms_source: vendor-check.md#azure-speech-he
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: soniox-rt
     display_name: Soniox real-time
@@ -118,24 +118,7 @@ engines:
       trains_on_audio: false
       opt_out_required: true
       terms_source: vendor-check.md#soniox-rt
-      terms_checked_on: unverified
-    options: {}
-  - id: speechmatics-rt
-    display_name: Speechmatics real-time
-    adapter: speechmatics_streaming
-    runs_on: cloud
-    platforms: [ios, bench]
-    languages: [he, en]
-    supports_code_switching: true
-    supports_speaker_changes: true
-    can_be_fallback: false
-    cost_usd_per_hour: 1.0
-    privacy:
-      retains_audio: false
-      trains_on_audio: false
-      opt_out_required: true
-      terms_source: vendor-check.md#speechmatics-rt
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options: {}
   - id: whisper-ivrit-local
     display_name: faster-whisper + ivrit.ai
@@ -152,7 +135,7 @@ engines:
       trains_on_audio: false
       opt_out_required: false
       terms_source: vendor-check.md#whisper-ivrit-local
-      terms_checked_on: unverified
+      terms_checked_on: "2026-11-19"
     options:
       # Checkpoint id is NOT verified yet: confirm it on the first live run (task T042).
       model: ivrit-ai/whisper-large-v3-ct2

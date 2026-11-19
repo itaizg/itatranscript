@@ -61,7 +61,7 @@
 
   **Verify:** the workflow passes on the branch's PR
 - [X] T010 [P] Create `bench/.env.example`, listing one env var name per cloud profile for **harness-only** keys (no values), with a header saying the app uses separate keys (XIV). **Verify:** `grep -E '=.+' bench/.env.example` finds nothing
-- [ ] T011 Do research task R-2a. For Agora, Google, Azure, Soniox and Speechmatics, read the current vendor docs and write `specs/001-live-captions/vendor-check.md`, a table with source links and access dates covering: streaming Hebrew, mixed-language support, live speaker labels, price per hour, audio retention/training terms, and opt-out. Then:
+- [X] T011 Do research task R-2a. For Agora, Google, Azure, Soniox and Speechmatics, read the current vendor docs and write `specs/001-live-captions/vendor-check.md`, a table with source links and access dates covering: streaming Hebrew, mixed-language support, live speaker labels, price per hour, audio retention/training terms, and opt-out. Then:
   - fill `cost_usd_per_hour` and `privacy.*` in `shared/engines.yaml`
   - pick one of Soniox/Speechmatics and delete the other profile
   - remove profiles that retain audio with no opt-out
