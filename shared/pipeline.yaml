@@ -1,0 +1,19 @@
+version: 1
+vad:
+  model: models/silero_vad.onnx
+  model_sha256: "2623a2953f6ff3d2c1e61740c6cdb7168133479b267dfef114a4a3cc5bdd788f"
+  threshold: 0.5
+  min_speech_ms: 250
+  min_silence_ms: 300
+  pad_ms: 300
+latency:
+  provisional: first_partial_arrival - vad_onset
+  final: last_final_arrival - vad_offset
+  report_percentiles: [50, 90]
+fallback:
+  ring_buffer_s: 5
+  silence_timeout_ms: 2000
+battery_warning:
+  min_remaining_minutes: 20
+  min_percent: 10
+speaker_heuristic: null

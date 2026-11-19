@@ -1,0 +1,6 @@
+{"type": "partial", "t_ms": 300, "segment_id": "s1", "text": "שלום", "lang": "he", "start_ms": 0}
+{"type": "final", "t_ms": 900, "segment_id": "s1", "text": "שלום לכולם", "lang": "he", "start_ms": 0, "end_ms": 800}
+{"type": "speaker_change", "t_ms": 2100, "at_ms": 2000, "speaker_hint": "B"}
+{"type": "partial", "t_ms": 2400, "segment_id": "s2", "text": "hi", "lang": "en", "start_ms": 2000}
+{"type": "final", "t_ms": 3000, "segment_id": "s2", "text": "hi there", "lang": "en", "start_ms": 2000, "end_ms": 2800}
+{"type": "closed", "t_ms": 3100}
