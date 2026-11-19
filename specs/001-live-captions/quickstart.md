@@ -19,6 +19,12 @@ uvx pre-commit run --all-files
 cd bench && uv sync --locked && uv run pytest
 ```
 
+Later steps need optional extras (the Google SDK for `check-engine google-stt-he`, the noise-suppression libraries for the cleanup variants). Install them when you get there:
+
+```bash
+cd bench && uv sync --locked --extra google --extra cleanup
+```
+
 **Expected**:
 - ruff, ty, dart format and dart analyze are clean.
 - pytest passes with no network and no keys, including the shared-fixture contract tests ([engine-stream.md](contracts/engine-stream.md)) and the pipeline-config tests ([pipeline-config.md](contracts/pipeline-config.md)).
